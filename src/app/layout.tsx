@@ -1,3 +1,4 @@
+import { Navbar } from "@/components/app/navbar";
 import "./globals.css";
 import type { Metadata } from "next";
 import {
@@ -49,6 +50,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${dmMono.variable} ${bricolageGrotesque.variable} ${publicSans.variable} ${archivo.variable} ${dmSans.className} antialiased`}
       >
+        <Navbar />
         {children}
       </body>
     </html>
