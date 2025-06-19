@@ -41,7 +41,7 @@ export default function Hero() {
                   layout
                   transition={{ type: "spring", damping: 30, stiffness: 400 }}
                 >
-                  your Wakatime{" "}
+                  your Wakatime
                 </motion.span>
                 <RotatingText
                   texts={["code.", "design.", "browse.", "debugging."]}
@@ -53,7 +53,7 @@ export default function Hero() {
                   staggerDuration={0.025}
                   splitLevelClassName="overflow-hidden pb-0.5"
                   transition={{ type: "spring", damping: 30, stiffness: 400 }}
-                  rotationInterval={3000}
+                  rotationInterval={2500}
                 />
               </motion.h1>
             </LayoutGroup>
@@ -61,7 +61,7 @@ export default function Hero() {
           <p className="text-lg font-medium sm:text-xl md:text-3xl">
             Here comes the handy part; it&apos;s simple to use!
           </p>
-          <Link href="/login" className={buttonVariants({ size: "lg" })}>
+          <Link href="/sign-in" className={buttonVariants({ size: "lg" })}>
             Get Started
             <ArrowUpRight className="size-5 md:size-[30px]" />
           </Link>

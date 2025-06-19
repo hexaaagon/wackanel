@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1750254083622,
+      "tag": "0000_better_auth_initiliaze",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1750258972169,
+      "tag": "0001_wakatime_profiles",
+      "breakpoints": true
+    }
+  ]
+}

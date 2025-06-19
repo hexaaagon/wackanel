@@ -27,8 +27,8 @@ export function Navbar() {
 
         {/* Right section */}
         <div className="flex flex-1 items-center justify-end gap-4">
-          <Link href="/auth/login" className={buttonVariants()}>
-            Login
+          <Link href="/sign-in" className={buttonVariants()}>
+            Sign in
           </Link>
         </div>
       </div>

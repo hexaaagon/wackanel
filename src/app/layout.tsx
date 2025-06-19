@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/app/navbar";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import type { Metadata } from "next";
 import {
@@ -8,6 +9,7 @@ import {
   Public_Sans,
   Archivo,
 } from "next/font/google";
+import ThemeProvider from "@/components/app/theme-provider";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -50,8 +52,10 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${dmMono.variable} ${bricolageGrotesque.variable} ${publicSans.variable} ${archivo.variable} ${dmSans.className} antialiased`}
       >
-        <Navbar />
-        {children}
+        <ThemeProvider>
+          <Navbar />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
