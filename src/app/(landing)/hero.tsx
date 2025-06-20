@@ -1,15 +1,32 @@
 "use client";
+import { useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
 import { LayoutGroup, motion } from "framer-motion";
 
 import { ArrowUpRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { buttonVariants } from "@/components/ui/button";
 import RotatingText from "@/components/ui/rotating-text";
 import Star2 from "@/components/star/2";
 import Star3 from "@/components/star/3";
 
 export default function Hero() {
+  const params = useSearchParams();
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (params.get("action") === "sign-out") {
+        toast.info(
+          <>
+            You have been signed out. <br /> Please sign in again.
+          </>,
+        );
+      }
+    }, 1000);
+  }, [params]);
+
   return (
     <section className="relative flex min-h-[100lvh] flex-col items-center justify-center overflow-hidden bg-[linear-gradient(to_right,#80808033_1px,transparent_1px),linear-gradient(to_bottom,#80808033_1px,transparent_1px)] bg-[size:70px_70px] px-4 py-[100px] md:py-[200px]">
       <Star2
@@ -61,7 +78,7 @@ export default function Hero() {
           <p className="text-lg font-medium sm:text-xl md:text-3xl">
             Here comes the handy part; it&apos;s simple to use!
           </p>
-          <Link href="/sign-in" className={buttonVariants({ size: "lg" })}>
+          <Link href="/auth/sign-in" className={buttonVariants({ size: "lg" })}>
             Get Started
             <ArrowUpRight className="size-5 md:size-[30px]" />
           </Link>

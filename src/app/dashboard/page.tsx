@@ -1,65 +1,87 @@
-"use client";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-import { authClient } from "@/lib/auth/client";
-import { LogOut, Trash } from "lucide-react";
+import {
+  generateSampleData,
+  processData,
+  calculateTotalTime,
+} from "@/lib/chart/dashboard";
 
-export default function AuthPage() {
-  const router = useRouter();
+import DashboardStats from "./stats-activity";
 
-  const handleSignOut = () => {
-    const signOutPromise = authClient.signOut().then(() => {
-      router.push("/");
-    });
+async function getStatsData() {
+  // TODO: Replace with actual API call when backend is ready
+  // For now, generate sample data server-side
+  const rawData = generateSampleData();
+  const { chartData, chartConfig } = processData(rawData);
 
-    toast.promise(signOutPromise, {
-      loading: "Signing out...",
-      success: "Successfully signed out! Redirecting to home...",
-      error: "Failed to sign out. Please try again.",
-    });
+  return {
+    chartData,
+    chartConfig,
+    generatedAt: new Date().toISOString(),
   };
+}
+
+export default async function DashboardPage() {
+  // Fetch data server-side
+  const statsData = await getStatsData();
+  const { chartData, chartConfig } = statsData;
+
+  // Calculate total activity for the last 24 hours (server-side)
+  const now = new Date();
+  const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const filteredData = chartData.filter((item) => {
+    const timestamp = new Date(item.timestamp);
+    return timestamp >= last24Hours;
+  });
+
+  const totalActivity = filteredData.reduce((acc, item) => {
+    return (
+      acc +
+      Object.keys(chartConfig).reduce((projectAcc, key) => {
+        if (key !== "timestamp") {
+          return projectAcc + ((item[key] as number) || 0);
+        }
+        return projectAcc;
+      }, 0)
+    );
+  }, 0);
+
+  const roundedTotalActivity = Math.round(totalActivity);
+  const hours = Math.floor(roundedTotalActivity / 60);
+  const minutes = roundedTotalActivity % 60;
 
   return (
-    <main className="bg-secondary-background relative flex min-h-[100lvh] flex-col items-center justify-center gap-2 overflow-hidden bg-[linear-gradient(to_right,#80808033_1px,transparent_1px),linear-gradient(to_bottom,#80808033_1px,transparent_1px)] bg-[size:70px_70px] px-4 py-[100px] md:py-[200px]">
-      <div className="flex items-center justify-center">
-        <Image
-          src="/images/wackanel.svg"
-          height={48}
-          width={48}
-          alt="Wackanel Logo"
-        />
-        <h1 className="ml-2 text-2xl font-semibold">Wackanel</h1>
-      </div>
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Dashboard</CardTitle>
-          <CardDescription>
-            Under construction. This page will be available soon.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          <Button
-            variant="neutral"
-            className="w-full cursor-pointer bg-red-500 hover:bg-red-600"
-            onClick={handleSignOut}
-          >
-            <LogOut /> Sign Out
-          </Button>
-        </CardContent>
-        <CardFooter></CardFooter>
-      </Card>
+    <main className="bg-secondary-background relative flex min-h-[100lvh] flex-col gap-2 overflow-hidden bg-[linear-gradient(to_right,#80808033_1px,transparent_1px),linear-gradient(to_bottom,#80808033_1px,transparent_1px)] bg-[size:70px_70px] px-4 pt-20 md:px-8">
+      <header>
+        <div className="text-2xl">
+          <b suppressHydrationWarning>
+            {hours > 0 ? `${hours} hrs ${minutes} mins` : `${minutes} mins`}
+          </b>{" "}
+          has counted over the last{" "}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <u>24 hours</u>.
+              </TooltipTrigger>
+              <TooltipContent className="bg-white" side="bottom">
+                <p>
+                  Active coding time tracked per minute. Shows actual time spent
+                  writing code, not idle time. - SAMPLE DATA!
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </header>
+      <section>
+        <DashboardStats chartData={chartData} chartConfig={chartConfig} />
+      </section>
     </main>
   );
 }

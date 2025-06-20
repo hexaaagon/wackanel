@@ -51,6 +51,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${dmSans.variable} ${dmMono.variable} ${bricolageGrotesque.variable} ${publicSans.variable} ${archivo.variable} ${dmSans.className} antialiased`}
+        suppressHydrationWarning // prevent react hydration because of chrome extensions
       >
         <ThemeProvider>
           <Navbar />
