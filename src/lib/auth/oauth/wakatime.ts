@@ -1,6 +1,6 @@
 import { GenericOAuthConfig } from "better-auth/plugins";
 import { db } from "@/lib/db";
-import { wakatimeProfiles } from "@/lib/db/schema/wakatime";
+import { wakatimeProfiles } from "@/lib/db/schema/users";
 import { User } from "@/shared/types/oauth/wakatime";
 
 export const config: GenericOAuthConfig = {
@@ -48,8 +48,7 @@ export async function upsertWakatimeProfile(
     await db
       .insert(wakatimeProfiles)
       .values({
-        id: `${userId}_wakatime`, // Generate a unique ID for this table
-        userId: userId, // Reference to the local user
+        id: userId, // Reference to the local user
         wakatimeId: wakatimeData.id, // Store the WakaTime user ID
 
         // Basic profile info
@@ -112,9 +111,9 @@ export async function upsertWakatimeProfile(
           : null,
       })
       .onConflictDoUpdate({
-        target: wakatimeProfiles.userId, // Use userId as the conflict target
+        target: wakatimeProfiles.id, // Use id as the conflict target
         set: {
-          // Update all fields except id, userId, and wakatimeId
+          // Update all fields except id and wakatimeId
           username: wakatimeData.username,
           displayName: wakatimeData.display_name,
           fullName: wakatimeData.full_name,

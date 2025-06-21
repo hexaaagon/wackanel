@@ -11,7 +11,8 @@ import {
   calculateTotalTime,
 } from "@/lib/chart/dashboard";
 
-import DashboardStats from "./stats-activity";
+import ActivityStats from "./stats-activity";
+import MainStats from "./stats-main";
 
 async function getStatsData() {
   // TODO: Replace with actual API call when backend is ready
@@ -79,8 +80,9 @@ export default async function DashboardPage() {
           </TooltipProvider>
         </div>
       </header>
-      <section>
-        <DashboardStats chartData={chartData} chartConfig={chartConfig} />
+      <section className="flex flex-col gap-4">
+        <MainStats totalActivity={roundedTotalActivity} newUser={false} />
+        <ActivityStats chartData={chartData} chartConfig={chartConfig} />
       </section>
     </main>
   );

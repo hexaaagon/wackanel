@@ -78,18 +78,28 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
             : 60;
   const minutesPerPoint = Math.round(totalMinutes / totalDataPoints);
 
-  const startTime = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const timeFormat =
+    minutesPerPoint < 60
+      ? {
+          hour: "numeric" as const,
+          minute: "2-digit" as const,
+          hour12: true,
+        }
+      : {
+          hour: "numeric" as const,
+          hour12: true,
+        };
 
-  const endDate = new Date(date.getTime() + minutesPerPoint * 60 * 1000);
-  const endTime = endDate.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const startTime = date.toLocaleTimeString("en-US", timeFormat);
+
+  // Calculate end time but don't go beyond current time
+  const now = new Date();
+  const calculatedEndDate = new Date(
+    date.getTime() + minutesPerPoint * 60 * 1000,
+  );
+  const endDate = calculatedEndDate > now ? now : calculatedEndDate;
+
+  const endTime = endDate.toLocaleTimeString("en-US", timeFormat);
 
   const formattedDate = date.toLocaleString("en-US", {
     weekday: "short",
@@ -152,25 +162,10 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
                   </span>
                 </div>
                 <span className="text-foreground text-xs font-medium whitespace-nowrap">
-                  {(item.value as number) < 1 ? (
-                    <>
-                      {((item.value as number) * 60).toFixed()} sec
-                      {(item.value as number) * 60 > 1 ? "s" : ""}
-                    </>
-                  ) : (
-                    <>
-                      {Math.round((item.value as number) * 100) / 100} min
-                      {Math.round((item.value as number) * 100) / 100 > 1
-                        ? "s"
-                        : ""}{" "}
-                      {(item.value as number) < 10 && (
-                        <>
-                          ({((item.value as number) * 60).toFixed()} sec
-                          {(item.value as number) * 60 > 1 ? "s" : ""})
-                        </>
-                      )}
-                    </>
-                  )}
+                  {Math.round((item.value as number) * 100) / 100} min
+                  {Math.round((item.value as number) * 100) / 100 > 1
+                    ? "s"
+                    : ""}
                 </span>
               </div>
             );
@@ -681,10 +676,21 @@ export function ChartAreaInteractive({
               domain={[
                 0,
                 (() => {
+                  // Use the totalActivity field if available, otherwise calculate the max
                   const maxValue = Math.max(
                     ...responsiveData.map((item) => {
+                      // Prefer totalActivity if it exists, otherwise sum all project values
+                      if (
+                        item.totalActivity &&
+                        typeof item.totalActivity === "number"
+                      ) {
+                        return item.totalActivity;
+                      }
                       return Object.keys(item)
-                        .filter((key) => key !== "timestamp")
+                        .filter(
+                          (key) =>
+                            key !== "timestamp" && key !== "totalActivity",
+                        )
                         .reduce(
                           (sum, key) => sum + ((item[key] as number) || 0),
                           0,
@@ -709,10 +715,20 @@ export function ChartAreaInteractive({
                 })(),
               ]}
               ticks={(() => {
+                // Use the totalActivity field if available, otherwise calculate the max
                 const maxValue = Math.max(
                   ...responsiveData.map((item) => {
+                    // Prefer totalActivity if it exists, otherwise sum all project values
+                    if (
+                      item.totalActivity &&
+                      typeof item.totalActivity === "number"
+                    ) {
+                      return item.totalActivity;
+                    }
                     return Object.keys(item)
-                      .filter((key) => key !== "timestamp")
+                      .filter(
+                        (key) => key !== "timestamp" && key !== "totalActivity",
+                      )
                       .reduce(
                         (sum, key) => sum + ((item[key] as number) || 0),
                         0,

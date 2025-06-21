@@ -1,11 +1,16 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { user } from "./auth";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  integer,
+} from "drizzle-orm/pg-core";
 
-export const wakatimeProfiles = pgTable("wakatime_profiles", {
-  id: text("id").primaryKey().notNull(),
-  userId: text("user_id")
+export const wakatimeProfiles = pgTable("user_wakatime_profiles", {
+  id: text("id")
+    .primaryKey()
     .notNull()
-    .unique()
     .references(() => user.id, { onDelete: "cascade" }),
   wakatimeId: text("wakatime_id").notNull().unique(),
 

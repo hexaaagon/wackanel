@@ -1,5 +1,5 @@
 {
-  "id": "aedf9ed9-0736-427d-a9b0-434d9d62d66c",
+  "id": "7cf31977-ddb1-469e-a0aa-60389c201f74",
   "prevId": "c82829ea-6477-4b51-a2be-20aca5594b11",
   "version": "7",
   "dialect": "postgresql",
@@ -304,20 +304,14 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.wakatime_profiles": {
-      "name": "wakatime_profiles",
+    "public.user_wakatime_profiles": {
+      "name": "user_wakatime_profiles",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true
         },
         "wakatime_id": {
@@ -561,12 +555,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "wakatime_profiles_user_id_user_id_fk": {
-          "name": "wakatime_profiles_user_id_user_id_fk",
-          "tableFrom": "wakatime_profiles",
+        "user_wakatime_profiles_id_user_id_fk": {
+          "name": "user_wakatime_profiles_id_user_id_fk",
+          "tableFrom": "user_wakatime_profiles",
           "tableTo": "user",
           "columnsFrom": [
-            "user_id"
+            "id"
           ],
           "columnsTo": [
             "id"
@@ -577,15 +571,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "wakatime_profiles_user_id_unique": {
-          "name": "wakatime_profiles_user_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
-        },
-        "wakatime_profiles_wakatime_id_unique": {
-          "name": "wakatime_profiles_wakatime_id_unique",
+        "user_wakatime_profiles_wakatime_id_unique": {
+          "name": "user_wakatime_profiles_wakatime_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "wakatime_id"
