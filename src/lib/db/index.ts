@@ -1,7 +1,5 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import * as authSchema from "./schema/auth";
-import * as wakatimeSchema from "./schema/users";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
-export const db = drizzle(process.env.DATABASE_URL!, {
-  schema: { ...authSchema, ...wakatimeSchema },
-});
+export const client = postgres(process.env.POSTGRES_URL, { prepare: false });
+export const db = drizzle(client);

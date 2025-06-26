@@ -5,7 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema/auth";
 
-import { genericOAuth } from "better-auth/plugins";
+import { apiKey, genericOAuth } from "better-auth/plugins";
 import {
   config as wakatimeConfig,
   upsertWakatimeProfile,
@@ -79,9 +79,16 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    nextCookies(),
+    apiKey({
+      rateLimit: {
+        enabled: true,
+        timeWindow: 60_000 * 5, // 5 minutes
+        maxRequests: 25, // 25 requests per 5 minutes
+      },
+    }),
     genericOAuth({
       config: [wakatimeConfig],
     }),
+    nextCookies(),
   ],
 });

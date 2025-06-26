@@ -1,6 +1,6 @@
 import { GenericOAuthConfig } from "better-auth/plugins";
 import { db } from "@/lib/db";
-import { wakatimeProfiles } from "@/lib/db/schema/users";
+import { wakatimeProfiles } from "@/lib/db/schema/wakatime";
 import { User } from "@/shared/types/oauth/wakatime";
 
 export const config: GenericOAuthConfig = {

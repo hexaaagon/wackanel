@@ -1,27 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
+import createMiddlewareAuthClient from "./lib/middleware/auth";
+import baseMiddleware from "./lib/middleware";
 
-export async function middleware(request: NextRequest) {
-  const sessionCookie = getSessionCookie(request);
-  if (
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname === "/auth/sign-in"
-  ) {
-    if (sessionCookie) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+export async function middleware(_request: NextRequest): Promise<NextResponse> {
+  const { request, nextResponse, supabase, sessionCookie } =
+    createMiddlewareAuthClient(_request);
 
-    return NextResponse.next();
-  } else if (
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname === "/auth/sign-out"
-  ) {
-    if (!sessionCookie) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    return NextResponse.next();
-  } else {
-    return NextResponse.next();
-  }
+  return baseMiddleware(request, nextResponse, supabase, sessionCookie);
 }
