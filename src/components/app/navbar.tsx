@@ -24,9 +24,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 
 export async function Navbar() {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const auth = await supabase.auth.getUser();
+  const auth = await getAuth();
 
   return (
     <nav className="border-border bg-secondary-background fixed top-0 left-0 z-20 mx-auto flex h-[70px] w-full items-center border-b-4 px-5">
@@ -61,17 +59,17 @@ export async function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer">
                     <AvatarImage
-                      src={"/images/default-avatar.png"}
-                      alt={auth.data.user?.id || "User Avatar"}
+                      src={auth.user.image || "/images/default-avatar.png"}
+                      alt={`${auth.user.name}'s Avatar ` || "User Avatar"}
                     />
                     <AvatarFallback>
-                      {auth.data.user?.id?.charAt(0) || "U"}
+                      {auth.user.name.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>{auth.data.user?.id}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{auth.user.name}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
                       <DropdownMenuItem asChild>
@@ -91,7 +89,7 @@ export async function Navbar() {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/auth/login" className={buttonVariants()}>
+            <Link href="/auth/sign-in" className={buttonVariants()}>
               Login
             </Link>
           )}
