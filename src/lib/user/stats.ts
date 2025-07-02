@@ -21,8 +21,6 @@ export async function getUserStats(
     return "unauthenticated";
   }
 
-  console.log("Fetching user stats for:", auth.user.id);
-
   const supabase = createServiceServer();
 
   const { data: profile, error } = await supabase

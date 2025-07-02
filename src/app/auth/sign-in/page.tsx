@@ -24,7 +24,7 @@ export default function AuthPage() {
 
     toast.promise(signInPromise, {
       loading: "Signing in with Wakatime...",
-      success: "Successfully signed in! Redirecting...",
+      success: "Redirecting...",
       error: "Failed to sign in. Please try again.",
     });
   };
