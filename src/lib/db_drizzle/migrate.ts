@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 type Database = any;
 import postgres from "postgres";
 
-import { createServiceServer } from "@/lib/supabase/service-server";
+import { createServiceServer } from "@/lib/db_supabase/service-server";
 
 import path from "node:path";
 import { glob } from "glob";
@@ -29,7 +29,7 @@ const runMigrate = async () => {
 
   // Database Migration
   console.log("⏳ Running Database migrations...");
-  await migrate(db, { migrationsFolder: "src/lib/db/migrations" });
+  await migrate(db, { migrationsFolder: "src/lib/db_drizzle/migrations" });
 
   // Supabase Extensions check
   console.log("⏳ Checking Supabase Extensions...");
@@ -83,7 +83,7 @@ async function checkExtensions(
 //   db: PostgresJsDatabase,
 //   supabase: SupabaseClient<Database>,
 // ) {
-//   const files = (await glob(`src/lib/db/sql/crons/*.sql`)).map((filePath) =>
+//   const files = (await glob(`src/lib/db_drizzle/sql/crons/*.sql`)).map((filePath) =>
 //     path.resolve(filePath),
 //   );
 //
@@ -142,7 +142,7 @@ const templateReplacements: Array<
   ["HOOK_TYPE", (type: "before" | "after") => type],
 ];
 async function RunSQLHooks(type: "before" | "after", db: PostgresJsDatabase) {
-  const files = (await glob(`src/lib/db/sql-hooks/${type}/*.sql`)).map(
+  const files = (await glob(`src/lib/db_drizzle/sql-hooks/${type}/*.sql`)).map(
     (filePath) => path.resolve(filePath),
   );
 

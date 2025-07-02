@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { LogOut, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -19,9 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { getAuth } from "@/lib/auth/server";
-import { LogOut, Settings } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
 
 export async function Navbar() {
   const auth = await getAuth();
