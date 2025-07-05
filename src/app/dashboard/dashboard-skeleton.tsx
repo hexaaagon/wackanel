@@ -45,7 +45,7 @@ export default function DashboardSkeleton() {
                 <Skeleton className="h-6 w-32" />
               </CardTitle>
               <CardDescription>
-                <Skeleton className="h-4 w-48" />
+                <Skeleton className="mt-1 h-4 w-48" />
               </CardDescription>
             </div>
             <Skeleton className="h-10 w-32" />
