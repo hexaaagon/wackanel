@@ -30,14 +30,13 @@ export async function getUserStats(
     .single();
 
   if (!profile) {
-    console.log("Profile not found:", error);
     return "user-not-found";
   }
 
   const { data: apikeyExists } = await supabase
     .from("apikey")
     .select("id")
-    .eq("userId", auth.user.id)
+    .eq("user_id", auth.user.id)
     .single();
 
   if (!apikeyExists?.id)
@@ -48,18 +47,31 @@ export async function getUserStats(
       newUser: true,
     };
 
+  const setupStatus = await getSetupStatus();
+
+  if (typeof setupStatus === "string") {
+    return {
+      chartData: [],
+      chartConfig: {},
+      generatedAt: new Date().toISOString(),
+      newUser: true,
+    };
+  }
+
   const rawData = generateSampleData();
+
   const { chartData, chartConfig } = processData(rawData);
 
   return {
     chartData,
     chartConfig,
     generatedAt: new Date().toISOString(),
-    newUser: false,
+    newUser: !setupStatus.isCompleted,
   };
 }
 
 import { generateSampleData, processData } from "@/lib/misc/chart/dashboard";
+import { getSetupStatus } from "../actions/setup";
 export async function generated_getUserStats(
   user: Awaited<ReturnType<typeof getAuth>>,
 ) {

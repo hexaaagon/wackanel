@@ -23,16 +23,14 @@ export default function DashboardSkeleton() {
         </Card>
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>
-              <Skeleton className="h-6 w-24" />
-            </CardTitle>
+            <CardTitle>Instances</CardTitle>
             <CardDescription>
-              <Skeleton className="h-4 w-full" />
+              Overview of instance status and activity.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Skeleton className="h-20 w-full" />
-          </CardContent>
+          <CardDescription>
+            <Skeleton className="mx-8 h-12" />
+          </CardDescription>
         </Card>
       </div>
 

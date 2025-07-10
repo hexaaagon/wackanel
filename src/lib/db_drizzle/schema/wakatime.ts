@@ -72,12 +72,8 @@ export const wakatimeProfiles = pgTable(
     // Timestamps
     wakatimeCreatedAt: timestamp("wakatime_created_at"),
     wakatimeModifiedAt: timestamp("wakatime_modified_at"),
-    createdAt: timestamp("created_at")
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at")
-      .$defaultFn(() => new Date())
-      .notNull(),
+    createdAt: timestamp("created_at").$defaultFn(() => new Date()),
+    updatedAt: timestamp("updated_at").$defaultFn(() => new Date()),
   },
   (table) => [
     pgPolicy("Users can read/write their own profile", {
@@ -119,9 +115,7 @@ export const wakatimeUserStats = pgTable(
     editors: text("editors"), // JSON array of {name, total_seconds, percent, text}
 
     // Timestamps
-    createdAt: timestamp("created_at")
-      .$defaultFn(() => new Date())
-      .notNull(),
+    createdAt: timestamp("created_at").$defaultFn(() => new Date()),
   },
   (table) => [
     pgPolicy("Users can read their own stats", {
@@ -138,7 +132,6 @@ export const wakatimeUserInstances = pgTable(
   {
     id: text("id")
       .primaryKey()
-      .notNull()
       .$defaultFn(() => nanoid()),
     userId: text("user_id")
       .notNull()
@@ -170,7 +163,6 @@ export const wakatimeUserInstances = pgTable(
 //   {
 //     id: text("id")
 //       .primaryKey()
-//       .notNull()
 //       .$defaultFn(() => nanoid()),
 //     instanceId: text("instance_id")
 //       .notNull()
@@ -191,7 +183,6 @@ export const wakatimeHeartbeats = pgTable(
   {
     id: text("id")
       .primaryKey()
-      .notNull()
       .$defaultFn(() => nanoid()),
     userId: text("user_id")
       .notNull()
@@ -207,16 +198,12 @@ export const wakatimeHeartbeats = pgTable(
     editor: text("editor"),
 
     // Aggregated metrics for this time slot
-    totalSeconds: integer("total_seconds").notNull().default(0), // total active seconds in this slot
-    heartbeatCount: integer("heartbeat_count").notNull().default(1), // number of heartbeats aggregated
+    totalSeconds: integer("total_seconds").default(0), // total active seconds in this slot
+    heartbeatCount: integer("heartbeat_count").default(1), // number of heartbeats aggregated
 
     // For cleanup and tracking
-    createdAt: timestamp("created_at")
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: timestamp("updated_at")
-      .$defaultFn(() => new Date())
-      .notNull(),
+    createdAt: timestamp("created_at").$defaultFn(() => new Date()),
+    updatedAt: timestamp("updated_at").$defaultFn(() => new Date()),
   },
   (table) => [
     pgPolicy("Users can read/write their own heartbeats", {
@@ -233,7 +220,6 @@ export const wakatimePendingHeartbeats = pgTable(
   {
     id: text("id")
       .primaryKey()
-      .notNull()
       .$defaultFn(() => nanoid()),
     userId: text("user_id")
       .notNull()
@@ -242,8 +228,7 @@ export const wakatimePendingHeartbeats = pgTable(
     // Pending Wakatime Instances
     instances: text("instances")
       .array()
-      .default(sql`ARRAY[]::text[]`)
-      .notNull(),
+      .default(sql`ARRAY[]::text[]`),
 
     // Heartbeat data
     entity: text("entity").notNull(),

@@ -8,8 +8,8 @@ export const executeInstall = async (
   apiKey?: string,
   apiUrl?: string,
 ) => ({
-  powershell: `${apiKey ? `$env:WACKANEL_API_KEY="${apiKey}"; ` : ""}${apiUrl ? `$env:WACKANEL_API_URL="${apiUrl}"; ` : ""}powershell -ExecutionPolicy Bypass -Command "& {iwr ${scriptUrl}/api/wakatime/${token}/setup.ps1 -UseBasicParsing | iex}"`,
-  shell: `${apiKey ? `export WACKANEL_API_KEY="${apiKey}" && ` : ""}${apiUrl ? `export WACKANEL_API_URL="${apiUrl}" && ` : ""}bash <(curl -s ${scriptUrl}/api/wakatime/${token}/setup.sh)`,
+  powershell: `${apiKey ? `$env:WACKANEL_API_KEY="${apiKey}"; ` : ""}${apiUrl ? `$env:WACKANEL_API_URL="${apiUrl}"; ` : ""}powershell -ExecutionPolicy Bypass -Command "& {iwr ${scriptUrl}/api/installer/wakatime/${token}/setup.ps1 -UseBasicParsing | iex}"`,
+  shell: `${apiKey ? `export WACKANEL_API_KEY="${apiKey}" && ` : ""}${apiUrl ? `export WACKANEL_API_URL="${apiUrl}" && ` : ""}bash <(curl -s ${scriptUrl}/api/installer/wakatime/${token}/setup.sh)`,
 });
 
 export async function generateScript(

@@ -17,13 +17,7 @@ export default function Step3M() {
       try {
         const key = await getApiKey();
         setApiKey(key);
-        setInstallScript(
-          await generateScript(
-            "config",
-            key,
-            `${window.location.origin}/api/wakatime`,
-          ),
-        );
+        setInstallScript(await generateScript("config", key));
       } catch (error) {
         console.error("Error fetching API key:", error);
       }

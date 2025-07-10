@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
 export default function MainStats({
@@ -46,18 +47,14 @@ export default function MainStats({
       </Card>
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Lorem ipsum</CardTitle>
+          <CardTitle>Instances</CardTitle>
           <CardDescription>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+            Overview of instance status and activity.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab nobis
-          repellendus, amet excepturi velit numquam expedita aspernatur vel
-          pariatur illo iure cumque? Aspernatur dolorum deleniti et neque natus
-          animi nihil.
-        </CardContent>
-        <CardFooter className="flex flex-col justify-end"></CardFooter>
+        <CardDescription>
+          <Skeleton className="mx-8 h-12" />
+        </CardDescription>
       </Card>
     </div>
   );

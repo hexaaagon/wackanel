@@ -19,6 +19,8 @@ import Step3 from "./content/step-3";
 import Step3M from "./content/step-3m";
 import Step4 from "./content/step-4";
 import Step5 from "./content/step-5";
+import { completeSetup } from "@/lib/actions/setup";
+import { toast } from "sonner";
 
 export default function SetupPage() {
   return (
@@ -31,14 +33,16 @@ export default function SetupPage() {
 }
 
 function SetupContent() {
-  const searchParams = useSearchParams();
-  const currentPage = parseInt(searchParams.get("page") || "1");
-  const isManualSetup = searchParams.get("manual") === "true";
   const [isStep3Connected, setIsStep3Connected] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const searchParams = useSearchParams();
 
   const handleStep3Connection = useCallback((connected: boolean) => {
     setIsStep3Connected(connected);
   }, []);
+
+  const currentPage = parseInt(searchParams.get("page") || "1");
+  const isManualSetup = searchParams.get("manual") === "true";
 
   const steps = [
     { id: 1, title: "Getting Started", description: "Welcome to Wackanel" },
@@ -260,11 +264,32 @@ function SetupContent() {
                 </Link>
               </Button>
             ) : (
-              <Button asChild size="sm" className="text-xs sm:text-sm">
-                <Link href="/dashboard">
-                  <span className="hidden sm:inline">Complete Setup</span>
-                  <span className="sm:hidden">Complete</span>
-                </Link>
+              <Button
+                size="sm"
+                className="cursor-pointer text-xs sm:text-sm"
+                disabled={isCompleted}
+                onClick={async () => {
+                  if (isCompleted) return;
+                  const completePromise = completeSetup();
+                  setIsCompleted(true);
+
+                  completePromise
+                    .then(() => {
+                      window.location.href = "/dashboard";
+                    })
+                    .catch(() => {
+                      setIsCompleted(false);
+                    });
+
+                  toast.promise(completePromise, {
+                    loading: "Completing setup...",
+                    success: "Setup completed successfully!",
+                    error: (e) => `Failed to complete setup: ${e.message}`,
+                  });
+                }}
+              >
+                <span className="hidden sm:inline">Complete Setup</span>
+                <span className="sm:hidden">Complete</span>
               </Button>
             )}
           </div>

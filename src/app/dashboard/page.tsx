@@ -1,16 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 import {
-  generateSampleData,
-  processData,
-  calculateTotalTime,
   type ProcessedChartData,
   type ChartConfig,
 } from "@/lib/misc/chart/dashboard";
