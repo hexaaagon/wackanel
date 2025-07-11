@@ -59,7 +59,7 @@ export async function generateInstallerKey() {
   const auth = await getAuth();
 
   const apiKey = await getApiKey(auth);
-  const installerToken = btoa(`${auth?.user.id}.${apiKey.split("_")[0]}}`);
+  const installerToken = `${auth?.user.id}.${apiKey.split("_")[1]}`;
 
   return {
     apiKey,

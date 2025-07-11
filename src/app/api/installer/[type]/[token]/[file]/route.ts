@@ -1,3 +1,6 @@
+import { auth } from "@/lib/auth";
+import { createServiceServer } from "@/lib/db_supabase/service-server";
+import { generateScript } from "@/scripts/execute";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -27,16 +30,49 @@ export async function GET(
     return new Response("Invalid file", { status: 400 });
   }
 
-  token = atob(token);
+  const [userId, apiKey] = token.split(".");
 
-  const isShell = file === "setup.sh";
-  const script = isShell
-    ? `#!/bin/sh\necho "coming soon"`
-    : `Write-Output "coming soon"`;
+  if (!userId || !apiKey) {
+    return new Response("Invalid token format - 01", { status: 400 });
+  }
+
+  const supabase = createServiceServer();
+
+  const account = await supabase
+    .from("user")
+    .select("id")
+    .eq("id", userId)
+    .single();
+
+  if (!account) {
+    return new Response("Invalid token format - 02", { status: 400 });
+  }
+
+  const api = await supabase
+    .from("apikey")
+    .select("prefix, key")
+    .eq("user_id", userId)
+    .single()
+    .then((res) => ({
+      type: "fetched",
+      key: `${res.data?.prefix}${res.data?.key}`,
+      body: res,
+    }));
+
+  if (!api || !api.key) {
+    return new Response("Invalid token format - 031", { status: 404 });
+  } else if (api.key.split("_")[1] !== apiKey) {
+    return new Response("Invalid token format - 032", { status: 403 });
+  }
+
+  const script = await generateScript(
+    file === "setup.ps1" ? "powershell" : "shell",
+    token,
+  );
 
   return new Response(script, {
     headers: {
-      "Content-Type": isShell ? "text/x-sh" : "text/x-powershell",
+      "Content-Type": file === "setup.sh" ? "text/x-sh" : "text/x-powershell",
     },
   });
 }
