@@ -16,6 +16,11 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  session: {
+    cookieName: "better-auth.session_token",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 24 hours
+  },
   databaseHooks: {
     account: {
       create: {

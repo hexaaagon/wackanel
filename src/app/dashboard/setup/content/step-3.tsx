@@ -20,10 +20,14 @@ import { generateInstallerKey, hasSentHeartbeat } from "@/lib/actions/setup";
 import { executeInstall } from "@/scripts/execute";
 
 interface Step3Props {
+  isReconnectMode: boolean;
   onConnectionChange?: (connected: boolean) => void;
 }
 
-export default function Step3({ onConnectionChange }: Step3Props) {
+export default function Step3({
+  isReconnectMode = false,
+  onConnectionChange,
+}: Step3Props) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -290,7 +294,9 @@ export default function Step3({ onConnectionChange }: Step3Props) {
             </p>
           </div>
           <Button variant="neutral" asChild>
-            <Link href="/dashboard/setup?page=3&manual=true">
+            <Link
+              href={`/dashboard/setup?${isReconnectMode ? "setup_completed=true&reconnect=true&" : "page=3&"}manual=true`}
+            >
               <Settings className="mr-2 h-4 w-4" />
               Manual Setup
             </Link>

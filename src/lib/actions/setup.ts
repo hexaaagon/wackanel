@@ -161,3 +161,32 @@ export async function completeSetup(state = true) {
     lastUpdated: setup.data.last_updated,
   };
 }
+
+export async function restartSetup() {
+  const auth = await getAuth();
+  const supabase = createServiceServer();
+
+  if (!auth?.user.id) {
+    return "unauthenticated";
+  }
+
+  const setup = await supabase
+    .from("user_setup")
+    .update({
+      is_completed: false,
+      last_updated: new Date().toISOString(),
+    })
+    .eq("user_id", auth.user.id)
+    .select("is_completed, last_updated")
+    .single();
+
+  if (setup.error) {
+    console.error("Error restarting setup:", setup);
+    return "error";
+  }
+
+  return {
+    isCompleted: setup.data.is_completed,
+    lastUpdated: setup.data.last_updated,
+  };
+}

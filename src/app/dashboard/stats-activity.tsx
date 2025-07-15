@@ -92,7 +92,6 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
 
   const startTime = date.toLocaleTimeString("en-US", timeFormat);
 
-  // Calculate end time but don't go beyond current time
   const now = new Date();
   const calculatedEndDate = new Date(
     date.getTime() + minutesPerPoint * 60 * 1000,
@@ -676,10 +675,8 @@ export function ChartAreaInteractive({
               domain={[
                 0,
                 (() => {
-                  // Use the totalActivity field if available, otherwise calculate the max
                   const maxValue = Math.max(
                     ...responsiveData.map((item) => {
-                      // Prefer totalActivity if it exists, otherwise sum all project values
                       if (
                         item.totalActivity &&
                         typeof item.totalActivity === "number"
@@ -715,10 +712,8 @@ export function ChartAreaInteractive({
                 })(),
               ]}
               ticks={(() => {
-                // Use the totalActivity field if available, otherwise calculate the max
                 const maxValue = Math.max(
                   ...responsiveData.map((item) => {
-                    // Prefer totalActivity if it exists, otherwise sum all project values
                     if (
                       item.totalActivity &&
                       typeof item.totalActivity === "number"

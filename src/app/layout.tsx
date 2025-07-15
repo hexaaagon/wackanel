@@ -1,5 +1,6 @@
-import { Navbar } from "@/components/app/navbar";
+import { ClientNavbar } from "@/components/app/navbar-client";
 import { Toaster } from "@/components/ui/sonner";
+import { StoreProviderWrapper } from "@/lib/store/provider";
 import "./globals.css";
 import type { Metadata } from "next";
 import {
@@ -53,10 +54,13 @@ export default function RootLayout({
         className={`${dmSans.variable} ${dmMono.variable} ${bricolageGrotesque.variable} ${publicSans.variable} ${archivo.variable} ${dmSans.className} antialiased`}
         suppressHydrationWarning // prevent react hydration because of chrome extensions
       >
-        <ThemeProvider>
-          <Navbar />
-          {children}
-        </ThemeProvider>
+        <StoreProviderWrapper>
+          <ThemeProvider>
+            <ClientNavbar />
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </StoreProviderWrapper>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 import { Zap, Key, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { getApiKey } from "@/lib/actions/setup";
 import { generateScript } from "@/scripts/execute";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Step3M() {
+export default function Step3M({ isReconnectMode = false }) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [installScript, setInstallScript] = useState<string | null>(null);
 
@@ -64,10 +65,12 @@ export default function Step3M() {
               className="border-yellow-700 bg-yellow-50 text-xs text-yellow-700 hover:underline"
               asChild
             >
-              <a href="/dashboard/setup?page=3">
+              <Link
+                href={`/dashboard/setup?${isReconnectMode ? "setup_completed=true&reconnect=true" : "page=3"}`}
+              >
                 <Zap className="ml-1 inline h-4 w-4" />
                 Automatic Setup
-              </a>
+              </Link>
             </Button>
           </div>
         </div>

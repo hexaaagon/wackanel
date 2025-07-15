@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { NextResponse } from "next/server";
 import createMiddlewareAuthClient from "./auth";
 
-type SupabaseMiddleware = ReturnType<typeof createMiddlewareAuthClient>;
+export type SupabaseMiddleware = ReturnType<typeof createMiddlewareAuthClient>;
 
 export default async function middleware(
   request: SupabaseMiddleware["request"],
@@ -9,18 +10,39 @@ export default async function middleware(
   supabase: SupabaseMiddleware["supabase"],
   sessionCookie: SupabaseMiddleware["sessionCookie"],
 ): Promise<NextResponse> {
-  if (
-    (request.nextUrl.pathname === "/" ||
-      request.nextUrl.pathname === "/auth/sign-in") &&
-    sessionCookie
-  ) {
+  const { pathname } = request.nextUrl;
+  const hasSession = !!sessionCookie;
+  const development = process.env.NODE_ENV === "development";
+
+  if (development) {
+    console.log(`Middleware - Path: ${pathname}, HasSession: ${hasSession}`);
+  }
+
+  if ((pathname === "/" || pathname === "/auth/sign-in") && hasSession) {
+    development &&
+      console.log("Middleware - Redirecting to dashboard (has session)");
     return NextResponse.redirect(new URL("/dashboard", request.url));
-  } else if (
-    (request.nextUrl.pathname.startsWith("/dashboard") ||
-      request.nextUrl.pathname === "/auth/sign-out") &&
-    !sessionCookie
+  }
+
+  if (
+    (pathname.startsWith("/dashboard") || pathname === "/auth/sign-out") &&
+    !hasSession
   ) {
+    development &&
+      console.log("Middleware - Redirecting to landing (no session)");
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (pathname.startsWith("/dashboard/setup") && hasSession) {
+    try {
+      const setup = await (
+        await import("./setup")
+      ).default(request, nextResponse, supabase, sessionCookie);
+
+      if (setup !== "no-action") return setup;
+    } catch (error) {
+      console.error("Setup middleware error:", error);
+    }
   }
 
   return nextResponse;

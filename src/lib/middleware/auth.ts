@@ -13,6 +13,18 @@ export default function createMiddlewareAuthClient(request: NextRequest) {
 
   const sessionCookie = getSessionCookie(request);
 
+  // Debug: Log session cookie status
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      "Middleware - Session cookie:",
+      sessionCookie ? "Present" : "Missing",
+    );
+    console.log(
+      "Middleware - All cookies:",
+      request.cookies.getAll().map((c) => c.name),
+    );
+  }
+
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
