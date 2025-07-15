@@ -1,5 +1,6 @@
 "use server";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { absoluteUrl } from "@/lib/utils";
 
 export const executeInstall = async (
@@ -19,11 +20,11 @@ export async function generateScript(
 ) {
   let file: string;
   if (type === "powershell") {
-    file = "src/scripts/powershell.ps1";
+    file = path.join(process.cwd(), "src/scripts/powershell.ps1");
   } else if (type === "shell") {
-    file = "src/scripts/shell.sh";
+    file = path.join(process.cwd(), "src/scripts/shell.sh");
   } else if (type === "config") {
-    file = "src/scripts/plain.cfg";
+    file = path.join(process.cwd(), "src/scripts/plain.cfg");
   } else {
     throw new Error("Invalid script type. Use 'powershell' or 'shell'.");
   }
