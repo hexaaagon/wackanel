@@ -295,7 +295,7 @@ export default function Step3({
           </div>
           <Button variant="neutral" asChild>
             <Link
-              href={`/dashboard/setup?${isReconnectMode ? "setup_completed=true&reconnect=true&" : "page=3&"}manual=true`}
+              href={`/dashboard/setup?${isReconnectMode ? "completed_type=reconnect-wakatime&" : "page=3&"}manual=true`}
             >
               <Settings className="mr-2 h-4 w-4" />
               Manual Setup

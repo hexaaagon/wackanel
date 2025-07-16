@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { createServiceServer } from "@/lib/db_supabase/service-server";
 import { generateScript } from "@/scripts/execute";
 import { NextRequest } from "next/server";

@@ -71,7 +71,7 @@ export async function getUserStats(
 }
 
 import { generateSampleData, processData } from "@/lib/misc/chart/dashboard";
-import { getSetupStatus } from "../actions/setup";
+import { getSetupStatus } from "../../actions/setup";
 export async function generated_getUserStats(
   user: Awaited<ReturnType<typeof getAuth>>,
 ) {

@@ -1,4 +1,4 @@
-import { ClientNavbar } from "@/components/app/navbar-client";
+import { Navbar } from "@/components/app/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { StoreProviderWrapper } from "@/lib/store/provider";
 import "./globals.css";
@@ -56,7 +56,7 @@ export default function RootLayout({
       >
         <StoreProviderWrapper>
           <ThemeProvider>
-            <ClientNavbar />
+            <Navbar />
             {children}
             <Toaster />
           </ThemeProvider>

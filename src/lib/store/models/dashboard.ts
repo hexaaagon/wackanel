@@ -1,5 +1,5 @@
 import { action, computed, thunk } from "easy-peasy";
-import { getUserStats } from "@/lib/user/stats";
+import { getUserStats } from "@/lib/misc/user/stats";
 import type { DashboardModel, DashboardStats } from "../types";
 
 export const dashboardModel: DashboardModel = {

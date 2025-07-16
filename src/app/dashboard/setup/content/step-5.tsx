@@ -1,3 +1,4 @@
+"use client";
 import {
   CheckCircle,
   BarChart3,
@@ -6,9 +7,68 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { store } from "@/lib/store";
+import { completeSetup } from "@/lib/actions/setup";
+import { toast } from "sonner";
 
-export default function Step6() {
+export default function Step6(state: {
+  isCompleted: boolean;
+  setIsCompleted?: (completed: boolean) => void;
+}) {
+  const handleDashboardNavigation = async () => {
+    if (state.isCompleted) return toast.error("Setup already completed");
+
+    const completePromise = completeSetup();
+    state.setIsCompleted?.(true);
+
+    toast.promise(completePromise, {
+      loading: "Completing setup...",
+      success: "Setup completed successfully!",
+      error: (e) => `Failed to complete setup: ${e.message}`,
+    });
+
+    try {
+      const result = await completePromise;
+      if (result === "error" || result === "unauthenticated") {
+        throw new Error("Failed to complete setup");
+      }
+
+      const actions = store.getActions();
+      actions.setup.setCompleted(true);
+      actions.dashboard.fetchStats();
+      window.location.href = "/dashboard";
+    } catch (error) {
+      toast.error("Failed to complete setup");
+    }
+  };
+
+  const handleSettingsNavigation = async () => {
+    if (state.isCompleted) return toast.error("Setup already completed");
+
+    const completePromise = completeSetup();
+    state.setIsCompleted?.(true);
+
+    toast.promise(completePromise, {
+      loading: "Completing setup...",
+      success: "Setup completed successfully!",
+      error: (e) => `Failed to complete setup: ${e.message}`,
+    });
+
+    try {
+      const result = await completePromise;
+      if (result === "error" || result === "unauthenticated") {
+        throw new Error("Failed to complete setup");
+      }
+
+      const actions = store.getActions();
+      actions.setup.setCompleted(true);
+      actions.dashboard.fetchStats();
+      window.location.href = "/dashboard/settings";
+    } catch (error) {
+      toast.error("Failed to complete setup");
+    }
+  };
+
   return (
     <div className="space-y-6 text-center">
       <div>
@@ -32,11 +92,15 @@ export default function Step6() {
             Check out your coding statistics, time tracking, and activity
             patterns across different projects and languages.
           </p>
-          <Button variant="neutral" size="sm" className="mt-3" asChild>
-            <Link href="/dashboard">
-              View Dashboard
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+          <Button
+            variant="neutral"
+            size="sm"
+            className="mt-3"
+            onClick={handleDashboardNavigation}
+            disabled={state.isCompleted}
+          >
+            View Dashboard
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
 
@@ -49,11 +113,15 @@ export default function Step6() {
             Fine-tune your dashboard preferences, manage integrations, and
             configure notifications to match your workflow.
           </p>
-          <Button variant="neutral" size="sm" className="mt-3" asChild>
-            <Link href="/dashboard/settings">
-              Open Settings
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+          <Button
+            variant="neutral"
+            size="sm"
+            className="mt-3"
+            onClick={handleSettingsNavigation}
+            disabled={state.isCompleted}
+          >
+            Open Settings
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>

@@ -43,8 +43,11 @@ export default function SetupPage() {
 function SetupContent() {
   const [isStep3Connected, setIsStep3Connected] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [completedType, setCompletedType] = useState<
+    "reconnect-wakatime" | "modify-instances" | null
+  >(null);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
-  const [isReconnectMode, setIsReconnectMode] = useState(false);
+  const [pageAhead, setPageAhead] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -55,24 +58,28 @@ function SetupContent() {
   const currentPage = parseInt(searchParams.get("page") || "1");
   const isManualSetup = searchParams.get("manual") === "true";
   const isSetupCompleted = searchParams.get("setup_completed") === "true";
-  const isReconnect = searchParams.get("reconnect") === "true";
+  const completedTypeParam = searchParams.get("completed_type") as
+    | "reconnect-wakatime"
+    | "modify-instances"
+    | null;
 
   useEffect(() => {
-    if (isSetupCompleted && !isReconnect) {
+    if (completedTypeParam) {
+      setCompletedType(completedTypeParam);
+    } else if (isSetupCompleted) {
       setShowCompletedDialog(true);
-    } else if (isReconnect && currentPage !== 3) {
-      router.push("/dashboard/setup?page=3&reconnect=true");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetupCompleted, isReconnect, currentPage]);
+  }, [isSetupCompleted, completedTypeParam, currentPage]);
 
   const handleCloseDialog = () => {
     setShowCompletedDialog(false);
     router.push("/dashboard");
   };
 
-  const handleRestartSetup = async () => {
+  const handleRestartSetup = async (e: React.MouseEvent<HTMLButtonElement>) => {
     try {
+      e.preventDefault();
+      e.currentTarget.disabled = true;
       const restartPromise = restartSetup();
       toast.promise(restartPromise, {
         loading: "Restarting setup...",
@@ -92,8 +99,12 @@ function SetupContent() {
 
   const handleReconnectWakatime = () => {
     setShowCompletedDialog(false);
-    setIsReconnectMode(true);
-    router.push("/dashboard/setup?page=3&reconnect=true");
+    setCompletedType("reconnect-wakatime");
+  };
+
+  const handleModifyInstances = () => {
+    setShowCompletedDialog(false);
+    setCompletedType("modify-instances");
   };
 
   const handleReconnectComplete = () => {
@@ -117,9 +128,13 @@ function SetupContent() {
   ];
 
   const getCurrentStep = (page: number, manual: boolean): number | null => {
-    if (isReconnectMode) {
+    if (completedType === "reconnect-wakatime") {
       if (page === 3 || (manual && page === 3)) return 3;
-      return 3; // Default to page 3 in reconnect mode
+      return 3; // Default to page 3 in reconnect-wakatime mode
+    }
+    if (completedType === "modify-instances") {
+      if (page === 4) return 4;
+      return 4; // Default to page 4 in modify-instances mode
     }
     if (manual) return 3;
     if (page >= 1 && page <= 5) return page;
@@ -156,12 +171,13 @@ function SetupContent() {
             <Button onClick={handleReconnectWakatime}>
               Reconnect WakaTime
             </Button>
+            <Button onClick={handleModifyInstances}>Modify Instances</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Only show progress steps if not in reconnect mode */}
-      {!isReconnectMode && (
+      {/* Only show progress steps if not in completed type mode */}
+      {!completedType && (
         <div className="mt-20 mb-4 sm:mb-6 lg:mb-8">
           {/* Progress Steps */}
           <div className="mt-3 flex items-center justify-center overflow-x-auto px-2 sm:mt-4 sm:px-0 lg:mt-6">
@@ -280,18 +296,24 @@ function SetupContent() {
         </div>
       )}
 
-      <section className="mx-auto w-full max-w-sm space-y-4 sm:max-w-2xl sm:space-y-6 lg:max-w-4xl">
+      <section
+        className={`mx-auto w-full max-w-sm space-y-4 sm:max-w-2xl sm:space-y-6 lg:max-w-4xl ${completedType ? "mt-16" : ""}`}
+      >
         <Card className="bg-secondary-background mb-4 shadow-lg sm:mb-6 lg:mb-8">
           <CardHeader className="px-6 pb-2 sm:pb-3 lg:pb-4">
             <CardTitle className="text-lg sm:text-xl lg:text-2xl">
-              {isReconnectMode
+              {completedType === "reconnect-wakatime"
                 ? "Reconnect WakaTime"
-                : getPageTitle(currentPage, isManualSetup)}
+                : completedType === "modify-instances"
+                  ? "Modify Instances"
+                  : getPageTitle(currentPage, isManualSetup)}
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm lg:text-base">
-              {isReconnectMode
+              {completedType === "reconnect-wakatime"
                 ? "Reconnect your WakaTime account to Wackanel"
-                : getPageDescription(currentPage, isManualSetup)}
+                : completedType === "modify-instances"
+                  ? "Configure additional Wakapi instances"
+                  : getPageDescription(currentPage, isManualSetup)}
             </CardDescription>
           </CardHeader>
           <CardContent className="px-6 pt-0 text-xs sm:text-sm lg:text-base">
@@ -299,14 +321,16 @@ function SetupContent() {
               currentPage,
               isManualSetup,
               handleStep3Connection,
-              isReconnectMode,
+              completedType,
+              isCompleted,
+              setIsCompleted,
             )}
           </CardContent>
         </Card>
 
         {/* Navigation */}
         <div className="flex justify-between px-3 sm:px-0">
-          {isReconnectMode ? (
+          {completedType ? (
             <div className="flex w-full justify-center">
               <Button
                 size="sm"
@@ -342,7 +366,7 @@ function SetupContent() {
                       asChild
                       size="sm"
                       className="text-xs sm:text-sm"
-                      disabled={!isStep3Connected}
+                      disabled={pageAhead !== 0 || !isStep3Connected}
                     >
                       <Link
                         href={`/dashboard/setup?page=4`}
@@ -351,6 +375,9 @@ function SetupContent() {
                             ? "pointer-events-none opacity-50"
                             : ""
                         }
+                        onClick={() => {
+                          setPageAhead(currentPage + 1);
+                        }}
                       >
                         Next
                         <ArrowRight className="ml-1 h-3 w-3" />
@@ -358,7 +385,12 @@ function SetupContent() {
                     </Button>
                   ) : (
                     <Button asChild size="sm" className="text-xs sm:text-sm">
-                      <Link href={`/dashboard/setup?page=${currentPage + 1}`}>
+                      <Link
+                        href={`/dashboard/setup?page=${currentPage + 1}`}
+                        onClick={() => {
+                          setPageAhead(currentPage + 1);
+                        }}
+                      >
                         Next
                         <ArrowRight className="ml-1 h-3 w-3" />
                       </Link>
@@ -457,14 +489,20 @@ function getPageContent(
   page: number,
   isManual: boolean = false,
   onStep3Connection?: (connected: boolean) => void,
-  isReconnectMode: boolean = false,
+  completedType: "reconnect-wakatime" | "modify-instances" | null = null,
+  isCompleted: boolean = false,
+  setIsCompleted?: (completed: boolean) => void,
 ): React.ReactNode {
-  if (isReconnectMode) {
+  if (completedType === "reconnect-wakatime") {
     return isManual ? (
       <Step3M isReconnectMode={true} />
     ) : (
       <Step3 isReconnectMode={true} onConnectionChange={onStep3Connection} />
     );
+  }
+
+  if (completedType === "modify-instances") {
+    return <Step4 />;
   }
 
   if (isManual) return <Step3M />;
@@ -481,7 +519,9 @@ function getPageContent(
     case 4:
       return <Step4 />;
     case 5:
-      return <Step5 />;
+      return (
+        <Step5 isCompleted={isCompleted} setIsCompleted={setIsCompleted} />
+      );
     default:
       return <div className="text-2xl">Page not found.</div>;
   }

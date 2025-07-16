@@ -11,15 +11,9 @@ interface WakapiInstance {
 }
 
 export default function Step5() {
-  const [instances, setInstances] = useState<WakapiInstance[]>([
-    {
-      id: "1",
-      name: "Personal Wakapi",
-      url: "https://wakapi.dev",
-      status: "connected",
-    },
-  ]);
+  const [instances, setInstances] = useState<WakapiInstance[]>([]);
   const [newInstanceUrl, setNewInstanceUrl] = useState("");
+  const [wakapiToken, setWakapiToken] = useState("");
 
   const addInstance = () => {
     if (newInstanceUrl) {
@@ -31,6 +25,7 @@ export default function Step5() {
       };
       setInstances([...instances, newInstance]);
       setNewInstanceUrl("");
+      setWakapiToken("");
 
       // Simulate connection
       setTimeout(() => {
@@ -131,21 +126,51 @@ export default function Step5() {
             >
               Wakapi Instance URL
             </label>
-            <div className="flex gap-2">
-              <input
-                id="instance-url"
-                type="url"
-                value={newInstanceUrl}
-                onChange={(e) => setNewInstanceUrl(e.target.value)}
-                placeholder="https://your-wakapi-instance.com"
-                className="flex-1 rounded-md border px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-              />
-              <Button onClick={addInstance} disabled={!newInstanceUrl}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add
-              </Button>
-            </div>
+            <input
+              id="instance-url"
+              type="url"
+              value={newInstanceUrl}
+              onChange={(e) => setNewInstanceUrl(e.target.value)}
+              placeholder="https://your-wakapi-instance.com"
+              className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            />
           </div>
+
+          <div>
+            <label
+              htmlFor="wakapi-token"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Wakapi Token
+            </label>
+            <input
+              id="wakapi-token"
+              type="text"
+              value={wakapiToken}
+              onChange={(e) => setWakapiToken(e.target.value)}
+              placeholder="your-wakapi-token"
+              className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <Button
+            onClick={addInstance}
+            disabled={!newInstanceUrl || !wakapiToken}
+            className="w-full"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Instance
+          </Button>
+
+          {newInstanceUrl === "https://waka.hackclub.com" && (
+            <Alert variant="warning">
+              <p className="text-sm">
+                You can&apos;t add both the Hack Club Wakapi (Hackatime v1) and
+                Hackatime v2 simultaneously.
+              </p>
+            </Alert>
+          )}
 
           <div className="rounded-lg bg-gray-50 p-4">
             <h5 className="mb-2 text-sm font-medium">
@@ -159,10 +184,12 @@ export default function Step5() {
                 https://wakapi.dev (Official public instance)
               </button>
               <button
-                onClick={() => setNewInstanceUrl("https://waka.hackclub.com")}
+                onClick={() =>
+                  setNewInstanceUrl("https://hackatime.hackclub.com")
+                }
                 className="block text-sm text-blue-600 hover:underline"
               >
-                https://waka.hackclub.com (Hack Club instance)
+                https://hackatime.hackclub.com (Hackatime v2 instance)
               </button>
             </div>
           </div>
@@ -207,15 +234,17 @@ volumes:
         </div>
       </div>
 
-      <Alert variant="success">
-        <div>
-          <strong>Optional Step</strong>
-          <p className="mt-1 text-sm">
-            Wakapi instances are optional. You can skip this step and use only
-            WakaTime, or add instances later from your dashboard settings.
-          </p>
-        </div>
-      </Alert>
+      {instances.length === 0 && (
+        <Alert variant="warning">
+          <div>
+            <strong>Warning</strong>
+            <p className="mt-1 text-sm">
+              You need to add at least one Wakapi instance. Wackanel starts
+              counting data from the Wakapi instance after you register it.
+            </p>
+          </div>
+        </Alert>
+      )}
     </div>
   );
 }

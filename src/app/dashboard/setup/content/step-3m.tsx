@@ -66,7 +66,7 @@ export default function Step3M({ isReconnectMode = false }) {
               asChild
             >
               <Link
-                href={`/dashboard/setup?${isReconnectMode ? "setup_completed=true&reconnect=true" : "page=3"}`}
+                href={`/dashboard/setup?${isReconnectMode ? "completed_type=reconnect-wakatime" : "page=3"}`}
               >
                 <Zap className="ml-1 inline h-4 w-4" />
                 Automatic Setup
