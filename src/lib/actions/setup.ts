@@ -7,6 +7,7 @@ import { createServiceServer } from "@/lib/db_supabase/service-server";
 import { nanoid } from "@/lib/utils";
 import { headers } from "next/headers";
 
+// TODO: refactor this whole mess to use manual api key management
 export async function getApiKey(user?: Awaited<ReturnType<typeof getAuth>>) {
   if (!user) {
     user = await getAuth();

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db_drizzle";
 import { wakatimePendingHeartbeats } from "@/lib/db_drizzle/schema/wakatime";
 import { validateApiKey } from "@/lib/auth/api-key-validator";
+import { wakatimeApiClient } from "@/lib/external/wakatime-api";
+import { wakapiClient } from "@/lib/external/wakapi-client";
 import {
   heartbeatsRequestSchema,
   type WakatimeHeartbeat,
@@ -31,7 +33,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userId = apiKeyValidation.userId!;
+    const user = apiKeyValidation.apiKey.key;
+
+    if (!user || !user.userId) {
+      return createAuthErrorResponse("Invalid API key structure");
+    }
 
     let body;
     try {
@@ -55,13 +61,54 @@ export async function POST(request: NextRequest) {
       ? validationResult.data
       : [validationResult.data];
 
-    const processedHeartbeats = [];
-    for (const heartbeat of heartbeats) {
-      try {
-        const pendingHeartbeat = await db
+    const forwardingPromises = [];
+
+    forwardingPromises.push(
+      wakatimeApiClient
+        .sendHeartbeat(user.userId, heartbeats)
+        .then((success) => ({ service: "wakatime", success }))
+        .catch((error) => {
+          console.error("Error forwarding to WakaTime:", error);
+          return { service: "wakatime", success: false };
+        }),
+    );
+
+    forwardingPromises.push(
+      wakapiClient
+        .sendHeartbeatToAllInstances(user.userId, heartbeats)
+        .then((results) => ({
+          service: "wakapi",
+          success: results.successful.length > 0,
+          results,
+        }))
+        .catch((error) => {
+          console.error("Error forwarding to Wakapi instances:", error);
+          return { service: "wakapi", success: false };
+        }),
+    );
+
+    const forwardingResults = await Promise.all(forwardingPromises);
+
+    // Check if any forwarding succeeded
+    const anySucceeded = forwardingResults.some((result) => result.success);
+
+    if (!anySucceeded) {
+      console.log("All forwarding attempts failed, storing in pending table");
+
+      const wakapiInstances = await wakapiClient.getInstancesForUser(
+        user.userId,
+      );
+      const targetInstances = [
+        "wakatime", // Always include WakaTime
+        ...wakapiInstances.map((instance) => instance.id),
+      ];
+
+      const pendingPromises = heartbeats.map((heartbeat) =>
+        db
           .insert(wakatimePendingHeartbeats)
           .values({
-            userId: userId,
+            userId: user.userId,
+            instances: targetInstances,
             entity: heartbeat.entity,
             type: heartbeat.type,
             category: heartbeat.category,
@@ -78,17 +125,20 @@ export async function POST(request: NextRequest) {
             cursorpos: heartbeat.cursorpos,
             isWrite: heartbeat.is_write,
           })
-          .returning();
+          .returning()
+          .catch((error) => {
+            console.error("Error storing pending heartbeat:", error);
+            return null;
+          }),
+      );
 
-        processedHeartbeats.push(pendingHeartbeat[0]);
-      } catch (error) {
-        console.error("Error processing heartbeat:", error);
-      }
+      await Promise.all(pendingPromises);
     }
 
+    // Always return success to the client (WakaTime API behavior)
     return createSuccessResponse(
       {
-        responses: processedHeartbeats.map(() => ({
+        responses: heartbeats.map(() => ({
           data: null,
           status: 201,
         })),

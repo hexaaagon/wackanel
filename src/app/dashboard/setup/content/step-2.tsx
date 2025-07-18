@@ -1,5 +1,5 @@
 import { Download, Code, Monitor, Zap } from "lucide-react";
-import { CodeBlock } from "@/lib/setup-docs-components";
+import { CodeBlock } from "@/components/app/setup";
 
 import {
   Accordion,

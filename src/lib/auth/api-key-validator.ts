@@ -1,45 +1,68 @@
-import { createServiceServer } from "@/lib/db_supabase/service-server";
+import { apiKeyCache, generateCacheKey } from "@/lib/cache/wakatime";
+import { auth } from ".";
 
-export async function validateApiKey(apiKey: string): Promise<{
-  valid: boolean;
-  userId?: string;
-  error?: string;
-}> {
+// TODO: refactor this whole mess to use manual api key management
+export async function validateApiKey(apiKey: string): Promise<
+  | {
+      valid: false;
+      error: string;
+    }
+  | {
+      valid: true;
+      apiKey: Awaited<ReturnType<typeof auth.api.verifyApiKey>>;
+    }
+> {
   try {
     if (!apiKey) {
       return { valid: false, error: "API key is required" };
     }
 
-    const supabase = createServiceServer();
+    const cacheKey = generateCacheKey("api_key", apiKey);
+    const cached = apiKeyCache.get(cacheKey);
 
-    // Extract prefix and key parts
-    const parts = apiKey.split("_");
-    if (parts.length !== 2) {
-      return { valid: false, error: "Invalid API key format" };
+    if (cached) {
+      if (cached.valid) {
+        // For cached valid results, we need to re-verify to get the full apiKey structure
+        // since the cache only stores basic validation info
+      } else {
+        console.log("Using cached invalid API key result:", cached.error);
+        return {
+          valid: false as const,
+          error: cached.error || "Invalid API key",
+        };
+      }
     }
 
-    const [prefix, key] = parts;
+    // if (apiKey.split("_").length !== 3 || !apiKey.startsWith("editor_")) {
+    //   const result = { valid: false as const, error: "Invalid API key format" };
+    //
+    //   apiKeyCache.set(cacheKey, result);
+    //   return result;
+    // }
 
-    // Query the database to validate the API key
-    const { data: apiKeyData, error } = await supabase
-      .from("apikey")
-      .select("user_id, enabled")
-      .eq("prefix", prefix + "_")
-      .eq("key", key)
-      .single();
+    const { valid, error, key } = await auth.api.verifyApiKey({
+      body: {
+        key: apiKey,
+      },
+    });
 
-    if (error || !apiKeyData) {
-      return { valid: false, error: "Invalid API key" };
+    console.log(apiKey);
+
+    if (error || !valid) {
+      console.log("API key validation failed:", error, valid, key);
+      const result = { valid: false as const, error: "Invalid API key" };
+
+      apiKeyCache.set(cacheKey, result);
+      return result;
     }
 
-    if (!apiKeyData.enabled) {
-      return { valid: false, error: "API key is disabled" };
-    }
-
-    return {
-      valid: true,
-      userId: apiKeyData.user_id,
+    const result = {
+      valid: true as const,
+      apiKey: { valid, error, key },
     };
+
+    apiKeyCache.set(cacheKey, result);
+    return result;
   } catch (error) {
     console.error("Error validating API key:", error);
     return { valid: false, error: "Internal server error" };

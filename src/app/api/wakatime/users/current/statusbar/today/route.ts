@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db_drizzle";
-import { wakatimeHeartbeats } from "@/lib/db_drizzle/schema/wakatime";
 import { validateApiKey } from "@/lib/auth/api-key-validator";
-import { eq, and, gte } from "drizzle-orm";
+import { wakatimeApiClient } from "@/lib/external/wakatime-api";
 import {
   createAuthErrorResponse,
   createServerErrorResponse,
@@ -27,58 +25,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const userId = apiKeyValidation.userId!;
+    const user = apiKeyValidation.apiKey.key;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayTimestamp = Math.floor(today.getTime() / 1000);
+    if (!user || !user.userId) {
+      return createAuthErrorResponse("Invalid API key structure");
+    }
 
-    const todayHeartbeats = await db
-      .select()
-      .from(wakatimeHeartbeats)
-      .where(
-        and(
-          eq(wakatimeHeartbeats.userId, userId),
-          gte(wakatimeHeartbeats.timeSlot, todayTimestamp),
-        ),
-      );
+    // Try to fetch from external WakaTime API first
+    const externalData = await wakatimeApiClient.getStatusbar(user.userId);
 
-    const totalSeconds = todayHeartbeats.reduce(
-      (sum, heartbeat) => sum + (heartbeat.totalSeconds || 0),
-      0,
-    );
+    if (externalData) {
+      return createSuccessResponse(externalData);
+    }
 
-    const formatTime = (seconds: number): string => {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const remainingSeconds = seconds % 60;
-
-      if (hours > 0) {
-        return `${hours}h ${minutes}m ${remainingSeconds}s`;
-      } else if (minutes > 0) {
-        return `${minutes}m ${remainingSeconds}s`;
-      } else {
-        return `${remainingSeconds}s`;
-      }
-    };
-
-    const recentHeartbeat = todayHeartbeats.sort(
-      (a, b) => (b.timeSlot || 0) - (a.timeSlot || 0),
-    )[0];
-
+    // If external API fails, return empty data (fallback)
     return createSuccessResponse({
       data: {
         cached_at: new Date().toISOString(),
-        decimal: (totalSeconds / 3600).toFixed(2),
-        digital: formatTime(totalSeconds),
-        percent: totalSeconds > 0 ? 100 : 0,
-        text: formatTime(totalSeconds),
+        decimal: "0.00",
+        digital: "0s",
+        percent: 0,
+        text: "0s",
         timeout: 15,
-        total_seconds: totalSeconds,
-        project: recentHeartbeat?.project || null,
-        category: recentHeartbeat?.category || null,
-        language: recentHeartbeat?.language || null,
-        is_coding: totalSeconds > 0,
+        total_seconds: 0,
+        project: null,
+        category: null,
+        language: null,
+        is_coding: false,
       },
     });
   } catch (error) {

@@ -44,6 +44,10 @@ const runMigrate = async () => {
   console.log("⏳ Running SQL hooks after migration...");
   await RunSQLHooks("after", db);
 
+  // Enable Supabase Cron Jobs
+  console.log("⏳ Enabling Supabase Cron Jobs...");
+  await EnableSupabaseCron(db, supabase);
+
   const end = Date.now();
   console.log("✅ Migrations completed in", end - start, "ms");
 
@@ -79,54 +83,54 @@ async function checkExtensions(
   return isPgNetEnabled && isPgCronEnabled;
 }
 
-// async function EnableSupabaseCron(
-//   db: PostgresJsDatabase,
-//   supabase: SupabaseClient<Database>,
-// ) {
-//   const files = (await glob(`src/lib/db_drizzle/sql/crons/*.sql`)).map((filePath) =>
-//     path.resolve(filePath),
-//   );
-//
-//   const file: boolean[] = await Promise.all(
-//     files.map(async (file) => {
-//       let script = await fs.readFile(file, "utf8");
-//
-//       if (!script) return false;
-//
-//       script = script
-//         .replaceAll("{{APP_URL}}", absoluteUrl().slice(0, -1))
-//         .replaceAll(
-//           "{{REST_API_PASSWORD}}",
-//           `Bearer ${process.env.POSTGRES_PASSWORD}`,
-//         );
-//
-//       const args = (file.startsWith("/") ? file.replace("/", "") : file).split(
-//         "/",
-//       );
-//
-//       try {
-//         await new Promise((res) =>
-//           setTimeout(() => res(null), Math.floor(Math.random() * 5 * 1000)),
-//         );
-//         await db.execute(script);
-//       } catch (e) {
-//         console.log(file, `Error while enabling ${args.slice(-1)}: ` + e);
-//
-//         return false;
-//       }
-//
-//       return true;
-//     }),
-//   );
-//
-//   const total = file.length;
-//   const success = file.filter((v) => v === true);
-//   const failed = file.filter((v) => v === false);
-//
-//   console.log(`  ✅ ${success.length}/${total} crons enabled`);
-//   console.log(`  ❌ ${failed.length}/${total} crons failed`);
-//   return;
-// }
+async function EnableSupabaseCron(
+  db: PostgresJsDatabase,
+  supabase: SupabaseClient<Database>,
+) {
+  const files = (await glob(`src/lib/db_drizzle/sql/crons/*.sql`)).map(
+    (filePath) => path.resolve(filePath),
+  );
+
+  const file: boolean[] = await Promise.all(
+    files.map(async (file) => {
+      let script = await fs.readFile(file, "utf8");
+
+      if (!script) return false;
+
+      script = script
+        .replaceAll("{{APP_URL}}", absoluteUrl().slice(0, -1))
+        .replaceAll(
+          "{{APP_PASSWORD}}",
+          `Bearer ${process.env.POSTGRES_PASSWORD}`,
+        );
+
+      const args = (file.startsWith("/") ? file.replace("/", "") : file).split(
+        "/",
+      );
+
+      try {
+        await new Promise((res) =>
+          setTimeout(() => res(null), Math.floor(Math.random() * 5 * 1000)),
+        );
+        await db.execute(script);
+      } catch (e) {
+        console.error(`Error while enabling ${args.slice(-1)}:`, e);
+        console.error(`Script content:`, script);
+        return false;
+      }
+
+      return true;
+    }),
+  );
+
+  const total = file.length;
+  const success = file.filter((v) => v === true);
+  const failed = file.filter((v) => v === false);
+
+  console.log(`  ✅ ${success.length}/${total} crons enabled`);
+  console.log(`  ❌ ${failed.length}/${total} crons failed`);
+  return;
+}
 
 const templateReplacements: Array<
   [
@@ -142,7 +146,7 @@ const templateReplacements: Array<
   ["HOOK_TYPE", (type: "before" | "after") => type],
 ];
 async function RunSQLHooks(type: "before" | "after", db: PostgresJsDatabase) {
-  const files = (await glob(`src/lib/db_drizzle/sql-hooks/${type}/*.sql`)).map(
+  const files = (await glob(`src/lib/db_drizzle/sql/hooks/${type}/*.sql`)).map(
     (filePath) => path.resolve(filePath),
   );
 

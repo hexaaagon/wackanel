@@ -7,7 +7,7 @@ import {
   Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, CodeBlock } from "@/lib/setup-docs-components";
+import { Alert, CodeBlock } from "@/components/app/setup";
 import {
   Accordion,
   AccordionItem,

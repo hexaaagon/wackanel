@@ -8,6 +8,7 @@ import {
   integer,
   AnyPgColumn,
   pgPolicy,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -138,14 +139,16 @@ export const wakatimeUserInstances = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
 
     // Instance data
-    type: text("type")
-      .$type<"wakatime" | "wakapi" | "hackatime" | "other">()
-      .notNull(),
+    type: text("type").$type<"wakapi" | "hackatime" | "other">().notNull(),
     // customApiPath: text("custom_api_path").references(
     //   () => wakatimeUserInstanceCustomApiPaths.id,
     //   { onDelete: "cascade" },
     // ),
     apiUrl: text("api_url").notNull(),
+    apiKey: text("api_key").notNull(),
+    // TODO: implement options
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    options: jsonb("options").default({}).$type<{}>(),
   },
   (table) => [
     pgPolicy("Users can read/write their own", {

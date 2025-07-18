@@ -161,29 +161,3 @@ export function ExternalLinkButton({
     </Button>
   );
 }
-
-interface DeviceDetectionProps {
-  userAgent?: string;
-}
-
-export function DeviceDetection({ userAgent }: DeviceDetectionProps) {
-  // Mock device detection - in real app this would use actual user agent
-  const detectedOS = "macOS"; // Could be "Windows", "Linux", "macOS"
-  const detectedEditor = "VS Code"; // Could be "VS Code", "IntelliJ", "Vim", etc.
-
-  return (
-    <div className="rounded-lg border bg-gray-50 p-4">
-      <h5 className="mb-2 font-medium">🔍 Detected Environment</h5>
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Operating System:</span>
-          <span className="font-medium">{detectedOS}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Likely Editor:</span>
-          <span className="font-medium">{detectedEditor}</span>
-        </div>
-      </div>
-    </div>
-  );
-}

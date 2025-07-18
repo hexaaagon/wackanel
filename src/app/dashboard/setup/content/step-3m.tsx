@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { Zap, Key, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, CodeBlock } from "@/lib/setup-docs-components";
+import { Alert, CodeBlock } from "@/components/app/setup";
 
 import { getApiKey } from "@/lib/actions/setup";
 import { generateScript } from "@/scripts/execute";

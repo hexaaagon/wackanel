@@ -65,6 +65,7 @@ export default async function setupMiddleware(
   if (!session?.user) return "no-action";
   if (
     request.nextUrl.searchParams.get("setup_completed") === "true" ||
+    request.nextUrl.searchParams.has("completed_type") ||
     request.nextUrl.searchParams.get("reconnect") === "true"
   )
     return "no-action";

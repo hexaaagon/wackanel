@@ -1,6 +1,7 @@
+import { absoluteUrl } from "@/lib/utils";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = absoluteUrl();
 const API_BASE = `${BASE_URL}/api/wakatime/users/current`;
 
 // This will be set up with a real API key from the database
@@ -215,7 +216,6 @@ describe("WakaTime API Integration Tests", () => {
 
   describe("Server Health Check", () => {
     it("should confirm server is actually running", async () => {
-      // This test will fail if the server isn't running on localhost:3000
       try {
         const response = await fetch(`${API_BASE}/heartbeats`, {
           method: "POST",
