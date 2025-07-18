@@ -1,4 +1,4 @@
-import { StoreProviderWrapper } from "@/lib/store/provider";
+import { StoreProviderWrapper } from "@/lib/app/store/provider";
 
 export default function DashboardTemplate({
   children,

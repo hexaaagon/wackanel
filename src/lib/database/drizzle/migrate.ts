@@ -6,12 +6,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 type Database = any;
 import postgres from "postgres";
 
-import { createServiceServer } from "@/lib/db_supabase/service-server";
+import { createServiceServer } from "@/lib/database/supabase/service-server";
 
 import path from "node:path";
 import { glob } from "glob";
 import fs from "fs-extra";
-import { absoluteUrl } from "../utils";
+import { absoluteUrl } from "../../utils";
 
 const runMigrate = async () => {
   if (!process.env.POSTGRES_URL) {
@@ -29,7 +29,9 @@ const runMigrate = async () => {
 
   // Database Migration
   console.log("⏳ Running Database migrations...");
-  await migrate(db, { migrationsFolder: "src/lib/db_drizzle/migrations" });
+  await migrate(db, {
+    migrationsFolder: "src/lib/database/drizzle/migrations",
+  });
 
   // Supabase Extensions check
   console.log("⏳ Checking Supabase Extensions...");
@@ -87,7 +89,7 @@ async function EnableSupabaseCron(
   db: PostgresJsDatabase,
   supabase: SupabaseClient<Database>,
 ) {
-  const files = (await glob(`src/lib/db_drizzle/sql/crons/*.sql`)).map(
+  const files = (await glob(`src/lib/database/drizzle/sql/crons/*.sql`)).map(
     (filePath) => path.resolve(filePath),
   );
 
@@ -146,9 +148,9 @@ const templateReplacements: Array<
   ["HOOK_TYPE", (type: "before" | "after") => type],
 ];
 async function RunSQLHooks(type: "before" | "after", db: PostgresJsDatabase) {
-  const files = (await glob(`src/lib/db_drizzle/sql/hooks/${type}/*.sql`)).map(
-    (filePath) => path.resolve(filePath),
-  );
+  const files = (
+    await glob(`src/lib/database/drizzle/sql/hooks/${type}/*.sql`)
+  ).map((filePath) => path.resolve(filePath));
 
   const file: boolean[] = await Promise.all(
     files.map(async (file) => {

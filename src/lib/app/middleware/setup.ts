@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { SupabaseMiddleware } from "@/lib/middleware";
-import { createServiceServer } from "@/lib/db_supabase/service-server";
+import { SupabaseMiddleware } from "@/lib/app/middleware";
+import { createServiceServer } from "@/lib/database/supabase/service-server";
 
 type SessionData = {
   user: { id: string };

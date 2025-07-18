@@ -1,11 +1,11 @@
-import { db } from "@/lib/db_drizzle";
-import { wakatimeProfiles } from "@/lib/db_drizzle/schema/wakatime";
+import { db } from "@/lib/database/drizzle";
+import { wakatimeProfiles } from "@/lib/database/drizzle/schema/wakatime";
 import { eq } from "drizzle-orm";
 import {
   wakatimeApiCache,
   oauthTokenCache,
   generateCacheKey,
-} from "@/lib/cache/wakatime";
+} from "@/lib/backend/cache/wakatime";
 
 export interface WakatimeApiResponse<T = unknown> {
   data: T;

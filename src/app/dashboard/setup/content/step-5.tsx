@@ -7,8 +7,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { store } from "@/lib/store";
-import { completeSetup } from "@/lib/actions/setup";
+import { store } from "@/lib/app/store";
+import { completeSetup } from "@/lib/app/actions/setup";
 import { toast } from "sonner";
 
 export default function Step6(state: {

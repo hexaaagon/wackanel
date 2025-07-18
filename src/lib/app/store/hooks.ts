@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useStoreState, useStoreActions } from "../store";
+import { useStoreState, useStoreActions } from ".";
 
 export function useDashboardData() {
   const dashboardState = useStoreState((state) => state.dashboard);

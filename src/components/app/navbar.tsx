@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuthData } from "@/lib/store/hooks";
+import { useAuthData } from "@/lib/app/store/hooks";
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuthData();

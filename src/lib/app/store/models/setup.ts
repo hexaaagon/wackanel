@@ -2,7 +2,7 @@ import { action, thunk } from "easy-peasy";
 import {
   completeSetup as completeSetupAction,
   restartSetup as restartSetupAction,
-} from "@/lib/actions/setup";
+} from "@/lib/app/actions/setup";
 import type { SetupModel } from "../types";
 
 export const setupModel: SetupModel = {

@@ -1,5 +1,5 @@
-import { createServiceServer } from "@/lib/db_supabase/service-server";
-import { generateScript } from "@/scripts/execute";
+import { createServiceServer } from "@/lib/database/supabase/service-server";
+import { generateScript } from "@/shared/scripts/installer/execute";
 import { NextRequest } from "next/server";
 
 export async function GET(

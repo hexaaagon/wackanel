@@ -2,13 +2,13 @@
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useDashboardData } from "@/lib/store/hooks";
+import { useDashboardData } from "@/lib/app/store/hooks";
 import ActivityStats from "./stats-activity";
 import MainStats from "./stats-main";
 import {
   type ProcessedChartData,
   type ChartConfig as DashboardChartConfig,
-} from "@/lib/misc/chart/dashboard";
+} from "@/lib/app/site/chart/dashboard";
 
 interface DashboardContentProps {
   chartData: ProcessedChartData[];

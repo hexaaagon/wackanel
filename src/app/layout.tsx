@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/app/navbar";
 import { Toaster } from "@/components/ui/sonner";
-import { StoreProviderWrapper } from "@/lib/store/provider";
+import { StoreProviderWrapper } from "@/lib/app/store/provider";
 import "./globals.css";
 import type { Metadata } from "next";
 import {

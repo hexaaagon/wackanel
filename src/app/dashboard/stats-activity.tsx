@@ -39,7 +39,7 @@ import {
 import {
   type ProcessedChartData,
   type ChartConfig as DashboardChartConfig,
-} from "@/lib/misc/chart/dashboard";
+} from "@/lib/app/site/chart/dashboard";
 
 interface DashboardStatsProps {
   chartData: ProcessedChartData[];

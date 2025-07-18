@@ -26,9 +26,9 @@ import Step3 from "./content/step-3";
 import Step3M from "./content/step-3m";
 import Step4 from "./content/step-4";
 import Step5 from "./content/step-5";
-import { completeSetup, restartSetup } from "@/lib/actions/setup";
+import { completeSetup, restartSetup } from "@/lib/app/actions/setup";
 import { toast } from "sonner";
-import { store } from "@/lib/store";
+import { store } from "@/lib/app/store";
 
 export default function SetupPage() {
   return (

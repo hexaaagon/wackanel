@@ -1,4 +1,4 @@
-import { apiKeyCache, generateCacheKey } from "@/lib/cache/wakatime";
+import { apiKeyCache, generateCacheKey } from "@/lib/backend/cache/wakatime";
 import { auth } from ".";
 
 // TODO: refactor this whole mess to use manual api key management

@@ -5,8 +5,8 @@ import { Zap, Key, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, CodeBlock } from "@/components/app/setup";
 
-import { getApiKey } from "@/lib/actions/setup";
-import { generateScript } from "@/scripts/execute";
+import { getApiKey } from "@/lib/app/actions/setup";
+import { generateScript } from "@/shared/scripts/installer/execute";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Step3M({ isReconnectMode = false }) {

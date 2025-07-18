@@ -3,7 +3,7 @@ import type { Session, User } from "better-auth/types";
 import type {
   ProcessedChartData,
   ChartConfig,
-} from "@/lib/misc/chart/dashboard";
+} from "@/lib/app/site/chart/dashboard";
 
 // Auth Model Types
 export interface AuthState {

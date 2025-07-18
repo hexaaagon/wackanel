@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db_drizzle";
-import { wakatimePendingHeartbeats } from "@/lib/db_drizzle/schema/wakatime";
-import { wakatimeApiClient } from "@/lib/external/wakatime-api";
-import { wakapiClient } from "@/lib/external/wakapi-client";
+import { db } from "@/lib/database/drizzle";
+import { wakatimePendingHeartbeats } from "@/lib/database/drizzle/schema/wakatime";
+import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
+import { wakapiClient } from "@/lib/backend/client/wakapi";
 import { and, eq } from "drizzle-orm";
 import {
   createServerErrorResponse,
   createSuccessResponse,
-} from "@/lib/misc/utils/api-responses";
+} from "@/lib/utils/api-responses";
 
 // POST /v1/backend/schedule-pending
 export async function POST(request: NextRequest) {

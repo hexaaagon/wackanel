@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "@/lib/auth/api-key-validator";
-import { wakatimeApiClient } from "@/lib/external/wakatime-api";
+import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { summaryQuerySchema } from "@/shared/schemas/wakatime";
 import {
   createValidationErrorResponse,
   createAuthErrorResponse,
   createServerErrorResponse,
   createSuccessResponse,
-} from "@/lib/misc/utils/api-responses";
+} from "@/lib/utils/api-responses";
 
 // GET /api/wakatime/users/current/summaries
 export async function GET(request: NextRequest) {

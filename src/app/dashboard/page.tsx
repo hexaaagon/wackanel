@@ -1,5 +1,5 @@
 "use client";
-import { useDashboardData, useAuthData } from "@/lib/store/hooks";
+import { useDashboardData, useAuthData } from "@/lib/app/store/hooks";
 import DashboardContent from "./dashboard-content";
 import DashboardSkeleton from "./dashboard-skeleton";
 

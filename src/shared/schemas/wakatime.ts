@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createSelectSchema, createInsertSchema } from "drizzle-zod";
-import { wakatimePendingHeartbeats } from "@/lib/db_drizzle/schema/wakatime";
+import { wakatimePendingHeartbeats } from "@/lib/database/drizzle/schema/wakatime";
 
 // Create base schemas from drizzle schema
 export const insertPendingHeartbeatSchema = createInsertSchema(

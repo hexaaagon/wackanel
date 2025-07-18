@@ -1,8 +1,11 @@
 "use server";
-import { ProcessedChartData, ChartConfig } from "@/lib/misc/chart/dashboard";
+import {
+  ProcessedChartData,
+  ChartConfig,
+} from "@/lib/app/site/chart/dashboard";
 
 import { getAuth } from "@/lib/auth/server";
-import { createServiceServer } from "@/lib/db_supabase/service-server";
+import { createServiceServer } from "@/lib/database/supabase/service-server";
 
 type ErrorResponse = "unauthenticated" | "user-not-found";
 
@@ -70,7 +73,10 @@ export async function getUserStats(
   };
 }
 
-import { generateSampleData, processData } from "@/lib/misc/chart/dashboard";
+import {
+  generateSampleData,
+  processData,
+} from "@/lib/app/site/chart/dashboard";
 import { getSetupStatus } from "../../actions/setup";
 export async function generated_getUserStats(
   user: Awaited<ReturnType<typeof getAuth>>,

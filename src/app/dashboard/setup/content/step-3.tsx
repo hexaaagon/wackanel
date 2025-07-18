@@ -16,8 +16,11 @@ import {
 } from "@/components/ui/accordion";
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { generateInstallerKey, hasSentHeartbeat } from "@/lib/actions/setup";
-import { executeInstall } from "@/scripts/execute";
+import {
+  generateInstallerKey,
+  hasSentHeartbeat,
+} from "@/lib/app/actions/setup";
+import { executeInstall } from "@/shared/scripts/installer/execute";
 
 interface Step3Props {
   isReconnectMode: boolean;

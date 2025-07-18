@@ -1,7 +1,10 @@
-import { db } from "@/lib/db_drizzle";
-import { wakatimeUserInstances } from "@/lib/db_drizzle/schema/wakatime";
+import { db } from "@/lib/database/drizzle";
+import { wakatimeUserInstances } from "@/lib/database/drizzle/schema/wakatime";
 import { eq } from "drizzle-orm";
-import { instanceStatusCache, generateCacheKey } from "@/lib/cache/wakatime";
+import {
+  instanceStatusCache,
+  generateCacheKey,
+} from "@/lib/backend/cache/wakatime";
 
 export interface WakapiInstance {
   id: string;

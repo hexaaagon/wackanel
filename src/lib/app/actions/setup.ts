@@ -2,7 +2,7 @@
 import { auth } from "@/lib/auth";
 import { getAuth } from "@/lib/auth/server";
 
-import { createServiceServer } from "@/lib/db_supabase/service-server";
+import { createServiceServer } from "@/lib/database/supabase/service-server";
 
 import { nanoid } from "@/lib/utils";
 import { headers } from "next/headers";

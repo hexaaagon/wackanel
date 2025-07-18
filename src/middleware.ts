@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import createMiddlewareAuthClient from "./lib/middleware/auth";
-import baseMiddleware from "./lib/middleware";
+import createMiddlewareAuthClient from "./lib/app/middleware/auth";
+import baseMiddleware from "./lib/app/middleware";
 import {
   getCachedMiddlewareResponse,
   setCachedMiddlewareResponse,
   generateMiddlewareCacheKey,
-} from "./lib/middleware/cache";
+} from "./lib/app/middleware/cache";
 
 const STATIC_ROUTES = ["/_next", "/favicon.ico", "/images"];
 
