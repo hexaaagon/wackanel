@@ -34,7 +34,6 @@ export default function Step6(state: {
       }
 
       const actions = store.getActions();
-      actions.setup.setCompleted(true);
       actions.dashboard.fetchStats();
       window.location.href = "/dashboard";
     } catch (error) {
@@ -61,7 +60,6 @@ export default function Step6(state: {
       }
 
       const actions = store.getActions();
-      actions.setup.setCompleted(true);
       actions.dashboard.fetchStats();
       window.location.href = "/dashboard/settings";
     } catch (error) {

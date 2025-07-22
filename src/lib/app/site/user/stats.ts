@@ -5,7 +5,7 @@ import {
 } from "@/lib/app/site/chart/dashboard";
 
 import { getAuth } from "@/lib/auth/server";
-import { createServiceServer } from "@/lib/database/supabase/service-server";
+import { supabaseService } from "@/lib/database/supabase/service-server";
 
 type ErrorResponse = "unauthenticated" | "user-not-found";
 
@@ -24,9 +24,7 @@ export async function getUserStats(
     return "unauthenticated";
   }
 
-  const supabase = createServiceServer();
-
-  const { data: profile, error } = await supabase
+  const { data: profile, error } = await supabaseService
     .from("user_wakatime_profiles")
     .select("*")
     .eq("id", auth.user.id)
@@ -35,20 +33,6 @@ export async function getUserStats(
   if (!profile) {
     return "user-not-found";
   }
-
-  const { data: apikeyExists } = await supabase
-    .from("apikey")
-    .select("id")
-    .eq("user_id", auth.user.id)
-    .single();
-
-  if (!apikeyExists?.id)
-    return {
-      chartData: [],
-      chartConfig: {},
-      generatedAt: new Date().toISOString(),
-      newUser: true,
-    };
 
   const setupStatus = await getSetupStatus();
 

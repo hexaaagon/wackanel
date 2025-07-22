@@ -45,19 +45,3 @@ export function useAuthData() {
     clearAuth: authActions.clearAuth,
   };
 }
-
-export function useSetupData() {
-  const setupState = useStoreState((state) => state.setup);
-  const setupActions = useStoreActions((actions) => actions.setup);
-
-  return {
-    isCompleted: setupState.isCompleted,
-    currentStep: setupState.currentStep,
-    steps: setupState.steps,
-    isLoading: setupState.isLoading,
-    setCurrentStep: setupActions.setCurrentStep,
-    updateStepStatus: setupActions.updateStepStatus,
-    completeSetup: setupActions.completeSetup,
-    restartSetup: setupActions.restartSetup,
-  };
-}

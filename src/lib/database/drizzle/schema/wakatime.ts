@@ -6,7 +6,6 @@ import {
   timestamp,
   boolean,
   integer,
-  AnyPgColumn,
   pgPolicy,
   jsonb,
 } from "drizzle-orm/pg-core";

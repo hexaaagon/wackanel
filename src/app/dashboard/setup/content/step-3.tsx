@@ -81,7 +81,12 @@ export default function Step3({
 
         try {
           const key = await generateInstallerKey();
-          setApiKey(key.apiKey);
+          if (key === "unauthenticated") {
+            console.error("Failed to generate installer key");
+            return;
+          }
+
+          setApiKey(key.apiKey.key);
 
           const scriptUrl = window.location.origin;
           const installCommands = await executeInstall(

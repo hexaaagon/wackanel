@@ -20,11 +20,14 @@ export async function generateScript(
 ) {
   let file: string;
   if (type === "powershell") {
-    file = path.join(process.cwd(), "src/scripts/powershell.ps1");
+    file = path.join(
+      process.cwd(),
+      "src/shared/scripts/installer/powershell.ps1",
+    );
   } else if (type === "shell") {
-    file = path.join(process.cwd(), "src/scripts/shell.sh");
+    file = path.join(process.cwd(), "src/shared/scripts/installer/shell.sh");
   } else if (type === "config") {
-    file = path.join(process.cwd(), "src/scripts/plain.cfg");
+    file = path.join(process.cwd(), "src/shared/scripts/installer/plain.cfg");
   } else {
     throw new Error("Invalid script type. Use 'powershell' or 'shell'.");
   }

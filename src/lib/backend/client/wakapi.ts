@@ -1,10 +1,8 @@
 import { db } from "@/lib/database/drizzle";
 import { wakatimeUserInstances } from "@/lib/database/drizzle/schema/wakatime";
 import { eq } from "drizzle-orm";
-import {
-  instanceStatusCache,
-  generateCacheKey,
-} from "@/lib/backend/cache/wakatime";
+import { wakatimeInstanceStatusCache } from "@/lib/backend/cache/wakatime";
+import { generateCacheKey } from "@/lib/backend/cache/utils";
 
 export interface WakapiInstance {
   id: string;
@@ -36,19 +34,19 @@ export class WakapiClient {
 
   private isInstanceOnline(instanceId: string): boolean {
     const cacheKey = generateCacheKey("instance_status", instanceId);
-    const cached = instanceStatusCache.get(cacheKey);
+    const cached = wakatimeInstanceStatusCache.get(cacheKey);
     return cached?.online ?? false;
   }
 
   private getLastChecked(instanceId: string): number {
     const cacheKey = generateCacheKey("instance_status", instanceId);
-    const cached = instanceStatusCache.get(cacheKey);
+    const cached = wakatimeInstanceStatusCache.get(cacheKey);
     return cached?.lastChecked ?? 0;
   }
 
   async checkInstanceHealth(instance: WakapiInstance): Promise<boolean> {
     const cacheKey = generateCacheKey("instance_status", instance.id);
-    const cached = instanceStatusCache.get(cacheKey);
+    const cached = wakatimeInstanceStatusCache.get(cacheKey);
 
     if (cached && Date.now() - cached.lastChecked < 60000) {
       return cached.online;
@@ -65,7 +63,7 @@ export class WakapiClient {
 
       const isOnline = response.ok;
 
-      instanceStatusCache.set(cacheKey, {
+      wakatimeInstanceStatusCache.set(cacheKey, {
         online: isOnline,
         lastChecked: Date.now(),
       });
@@ -77,7 +75,7 @@ export class WakapiClient {
         error,
       );
 
-      instanceStatusCache.set(cacheKey, {
+      wakatimeInstanceStatusCache.set(cacheKey, {
         online: false,
         lastChecked: Date.now(),
         error: error instanceof Error ? error.message : "Unknown error",
@@ -113,7 +111,7 @@ export class WakapiClient {
       const success = response.ok;
 
       const cacheKey = generateCacheKey("instance_status", instance.id);
-      instanceStatusCache.set(cacheKey, {
+      wakatimeInstanceStatusCache.set(cacheKey, {
         online: success,
         lastChecked: Date.now(),
       });
@@ -123,7 +121,7 @@ export class WakapiClient {
       console.error(`Error sending heartbeat to ${instance.id}:`, error);
 
       const cacheKey = generateCacheKey("instance_status", instance.id);
-      instanceStatusCache.set(cacheKey, {
+      wakatimeInstanceStatusCache.set(cacheKey, {
         online: false,
         lastChecked: Date.now(),
         error: error instanceof Error ? error.message : "Unknown error",

@@ -36,6 +36,13 @@
       "when": 1752747800080,
       "tag": "0004_extended-wakatime-instances",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1752899897500,
+      "tag": "0005_apikey_migrate",
+      "breakpoints": true
     }
   ]
 }

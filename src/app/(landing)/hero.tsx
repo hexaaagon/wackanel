@@ -2,8 +2,9 @@
 import { useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-
 import { LayoutGroup, motion } from "framer-motion";
+
+import { store } from "@/lib/app/store";
 
 import { ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
@@ -16,13 +17,11 @@ export default function Hero() {
   const params = useSearchParams();
 
   useEffect(() => {
+    const actions = store.getActions();
     setTimeout(() => {
       if (params.get("action") === "sign-out") {
-        toast.info(
-          <>
-            You have been signed out. <br /> Please sign in again.
-          </>,
-        );
+        actions.auth.clearAuth();
+        toast.info(<>You have been signed out.</>);
       }
     }, 1000);
   }, [params]);

@@ -70,79 +70,34 @@ export type Database = {
           },
         ]
       }
-      apikey: {
+      editor_apikey: {
         Row: {
           created_at: string
-          enabled: boolean | null
-          expires_at: string | null
           id: string
           key: string
-          last_refill_at: string | null
-          last_request: string | null
-          metadata: string | null
-          name: string | null
-          permissions: string | null
+          last_request_at: string
           prefix: string | null
-          rate_limit_enabled: boolean | null
-          rate_limit_max: number | null
-          rate_limit_time_window: number | null
-          refill_amount: number | null
-          refill_interval: number | null
-          remaining: number | null
-          request_count: number | null
-          start: string | null
-          updated_at: string
           user_id: string
         }
         Insert: {
           created_at: string
-          enabled?: boolean | null
-          expires_at?: string | null
           id: string
           key: string
-          last_refill_at?: string | null
-          last_request?: string | null
-          metadata?: string | null
-          name?: string | null
-          permissions?: string | null
+          last_request_at: string
           prefix?: string | null
-          rate_limit_enabled?: boolean | null
-          rate_limit_max?: number | null
-          rate_limit_time_window?: number | null
-          refill_amount?: number | null
-          refill_interval?: number | null
-          remaining?: number | null
-          request_count?: number | null
-          start?: string | null
-          updated_at: string
           user_id: string
         }
         Update: {
           created_at?: string
-          enabled?: boolean | null
-          expires_at?: string | null
           id?: string
           key?: string
-          last_refill_at?: string | null
-          last_request?: string | null
-          metadata?: string | null
-          name?: string | null
-          permissions?: string | null
+          last_request_at?: string
           prefix?: string | null
-          rate_limit_enabled?: boolean | null
-          rate_limit_max?: number | null
-          rate_limit_time_window?: number | null
-          refill_amount?: number | null
-          refill_interval?: number | null
-          remaining?: number | null
-          request_count?: number | null
-          start?: string | null
-          updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "apikey_user_id_user_id_fk"
+            foreignKeyName: "editor_apikey_user_id_user_id_fk"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user"
@@ -302,20 +257,26 @@ export type Database = {
       }
       user_wakatime_instances: {
         Row: {
+          api_key: string
           api_url: string
           id: string
+          options: Json | null
           type: string
           user_id: string
         }
         Insert: {
+          api_key: string
           api_url: string
           id: string
+          options?: Json | null
           type: string
           user_id: string
         }
         Update: {
+          api_key?: string
           api_url?: string
           id?: string
+          options?: Json | null
           type?: string
           user_id?: string
         }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/lib/auth/api-key-validator";
+import { validateEditorUser } from "@/lib/auth/api-key/validator";
 import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { summaryQuerySchema } from "@/shared/schemas/wakatime";
 import {
@@ -19,18 +19,12 @@ export async function GET(request: NextRequest) {
 
     const apiKey = authHeader.replace("Bearer ", "");
 
-    const apiKeyValidation = await validateApiKey(apiKey);
+    const apiKeyValidation = await validateEditorUser(apiKey);
 
     if (!apiKeyValidation.valid) {
       return createAuthErrorResponse(
         apiKeyValidation.error || "Invalid API key",
       );
-    }
-
-    const user = apiKeyValidation.apiKey.key;
-
-    if (!user || !user.userId) {
-      return createAuthErrorResponse("Invalid API key structure");
     }
 
     const url = new URL(request.url);
@@ -61,28 +55,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Try to fetch from external WakaTime API first
-    const externalData = await wakatimeApiClient.getSummary(
-      user.userId,
-      validationResult.data,
-    );
-
-    if (externalData) {
-      return createSuccessResponse({
-        ...externalData,
-        status: "ok",
-      });
-    }
-
-    // If external API fails, return empty data (fallback)
+    // For now, we'll just return fallback data since OAuth is not implemented
+    // TODO: Implement proper OAuth token management and remove this shortcut
     const now = new Date();
-    const start =
-      validationResult.data.start ||
-      new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const end = validationResult.data.end || now.toISOString();
+    const today = now.toISOString().split("T")[0];
+    const start = validationResult.data.start || today;
+    const end = validationResult.data.end || today;
 
     return createSuccessResponse({
-      data: [],
+      data: {
+        total_seconds: 0,
+        languages: [],
+        projects: [],
+        start,
+        end,
+      },
       start,
       end,
       status: "ok",

@@ -54,37 +54,8 @@ export interface DashboardModel extends DashboardState {
   refreshStats: Thunk<DashboardModel, void, unknown, StoreModel>;
 }
 
-// Setup Model Types
-export interface SetupState {
-  isCompleted: boolean;
-  currentStep: number;
-  steps: {
-    [key: number]: {
-      completed: boolean;
-      data?: unknown;
-    };
-  };
-  isLoading: boolean;
-}
-
-export interface SetupModel extends SetupState {
-  // Actions
-  setCompleted: Action<SetupModel, boolean>;
-  setCurrentStep: Action<SetupModel, number>;
-  updateStepStatus: Action<
-    SetupModel,
-    { step: number; completed: boolean; data?: unknown }
-  >;
-  setLoading: Action<SetupModel, boolean>;
-
-  // Thunks
-  completeSetup: Thunk<SetupModel>;
-  restartSetup: Thunk<SetupModel>;
-}
-
 // Root Store Model
 export interface StoreModel {
   auth: AuthModel;
   dashboard: DashboardModel;
-  setup: SetupModel;
 }

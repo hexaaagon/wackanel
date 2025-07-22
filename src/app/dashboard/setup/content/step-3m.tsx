@@ -16,9 +16,14 @@ export default function Step3M({ isReconnectMode = false }) {
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
-        const key = await getApiKey();
-        setApiKey(key);
-        setInstallScript(await generateScript("config", key));
+        const apiKey = await getApiKey();
+        if (apiKey === "unauthenticated") {
+          console.error("Failed to fetch API key");
+          return;
+        }
+
+        setApiKey(apiKey.key);
+        setInstallScript(await generateScript("config", apiKey.key));
       } catch (error) {
         console.error("Error fetching API key:", error);
       }

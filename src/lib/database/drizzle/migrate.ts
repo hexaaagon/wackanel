@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 type Database = any;
 import postgres from "postgres";
 
-import { createServiceServer } from "@/lib/database/supabase/service-server";
+import { supabaseService } from "@/lib/database/supabase/service-server";
 
 import path from "node:path";
 import { glob } from "glob";
@@ -35,20 +35,20 @@ const runMigrate = async () => {
 
   // Supabase Extensions check
   console.log("⏳ Checking Supabase Extensions...");
-  const supabase = createServiceServer();
-  const isExtensionsEnabled = await checkExtensions(db, supabase);
+  const isExtensionsEnabled = await checkExtensions(db, supabaseService);
   if (!isExtensionsEnabled) {
     const end = Date.now();
     console.log("❌ Migrations completed in", end - start, "ms with errors.");
     return process.exit(1);
   }
-  // Run SQL hooks after migration
-  console.log("⏳ Running SQL hooks after migration...");
-  await RunSQLHooks("after", db);
 
   // Enable Supabase Cron Jobs
   console.log("⏳ Enabling Supabase Cron Jobs...");
-  await EnableSupabaseCron(db, supabase);
+  await EnableSupabaseCron(db, supabaseService);
+
+  // Run SQL hooks after migration
+  console.log("⏳ Running SQL hooks after migration...");
+  await RunSQLHooks("after", db);
 
   const end = Date.now();
   console.log("✅ Migrations completed in", end - start, "ms");

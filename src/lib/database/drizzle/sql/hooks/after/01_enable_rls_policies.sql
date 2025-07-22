@@ -42,12 +42,3 @@ CREATE POLICY "Users can read/write their own verifications"
 ON "verification"
 FOR ALL
 USING (identifier = (SELECT email FROM "user" WHERE id = current_user_id()));
-
--- Enable RLS on apikey table (users can only see their own API keys)
-ALTER TABLE "apikey" ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Users can read/write their own API keys" ON "apikey";
-CREATE POLICY "Users can read/write their own API keys"
-ON "apikey"
-FOR ALL
-USING ("user_id" = current_user_id());

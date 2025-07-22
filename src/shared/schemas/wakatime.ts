@@ -15,17 +15,17 @@ export const wakatimeHeartbeatSchema = z.object({
   time: z.number().int().positive(),
   entity: z.string().min(1),
   type: z.enum(["file", "domain", "app", "url"]),
-  category: z.string().optional(),
+  category: z.string().min(1),
   project: z.string().optional(),
   project_root_count: z.number().int().optional(),
   branch: z.string().optional(),
   language: z.string().optional(),
-  dependencies: z.string().optional(),
-  lines: z.string().optional(),
+  dependencies: z.union([z.string(), z.array(z.string())]).optional(),
+  lines: z.union([z.string(), z.number().int().positive()]).optional(),
   line_additions: z.number().int().optional(),
   line_deletions: z.number().int().optional(),
   lineno: z.number().int().optional(),
-  cursorpos: z.string().optional(),
+  cursorpos: z.union([z.string(), z.number().int().nonnegative()]).optional(),
   is_write: z.boolean().optional(),
 });
 
@@ -43,8 +43,14 @@ export const bulkHeartbeatsRequestSchema = z.array(wakatimeHeartbeatSchema);
 
 // Summary endpoint query parameters
 export const summaryQuerySchema = z.object({
-  start: z.string().datetime().optional(),
-  end: z.string().datetime().optional(),
+  start: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+    .optional(),
+  end: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+    .optional(),
   range: z
     .enum(["last_7_days", "last_30_days", "last_6_months", "last_year"])
     .optional(),

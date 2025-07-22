@@ -33,3 +33,11 @@ export const createServiceServer = () => {
     },
   );
 };
+
+/**
+ * WARNING: DON'T USE THIS ON CLIENT COMPONENTS
+ *
+ * Creates a Supabase client with service role privileges that bypasses RLS.
+ * This client should NEVER be used on the client side or exposed to users.
+ */
+export const supabaseService = createServiceServer();

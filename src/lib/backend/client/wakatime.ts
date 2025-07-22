@@ -1,11 +1,9 @@
 import { db } from "@/lib/database/drizzle";
 import { wakatimeProfiles } from "@/lib/database/drizzle/schema/wakatime";
 import { eq } from "drizzle-orm";
-import {
-  wakatimeApiCache,
-  oauthTokenCache,
-  generateCacheKey,
-} from "@/lib/backend/cache/wakatime";
+import { wakatimeApiCache } from "@/lib/backend/cache/wakatime";
+import { oauthTokenCache } from "@/lib/backend/cache/auth";
+import { generateCacheKey } from "@/lib/backend/cache/utils";
 
 export interface WakatimeApiResponse<T = unknown> {
   data: T;
@@ -157,6 +155,7 @@ export class WakatimeApiClient {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
+          signal: AbortSignal.timeout(5000), // 5 second timeout
         },
       );
 
@@ -200,6 +199,7 @@ export class WakatimeApiClient {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
+          signal: AbortSignal.timeout(5000), // 5 second timeout
         },
       );
 
@@ -236,6 +236,7 @@ export class WakatimeApiClient {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(heartbeats),
+        signal: AbortSignal.timeout(5000), // 5 second timeout
       });
 
       return response.ok;

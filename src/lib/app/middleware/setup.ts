@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { SupabaseMiddleware } from "@/lib/app/middleware";
-import { createServiceServer } from "@/lib/database/supabase/service-server";
+import { supabaseService } from "@/lib/database/supabase/service-server";
 
 type SessionData = {
   user: { id: string };
@@ -71,7 +70,6 @@ export default async function setupMiddleware(
     return "no-action";
 
   try {
-    const supabaseService = createServiceServer();
     const setup = await supabaseService
       .from("user_setup")
       .select("is_completed")

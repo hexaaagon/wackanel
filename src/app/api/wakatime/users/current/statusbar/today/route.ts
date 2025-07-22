@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/lib/auth/api-key-validator";
+import { validateEditorUser } from "@/lib/auth/api-key/validator";
 import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import {
   createAuthErrorResponse,
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const apiKey = authHeader.replace("Bearer ", "");
 
-    const apiKeyValidation = await validateApiKey(apiKey);
+    const apiKeyValidation = await validateEditorUser(apiKey);
 
     if (!apiKeyValidation.valid) {
       return createAuthErrorResponse(
@@ -25,20 +25,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const user = apiKeyValidation.apiKey.key;
-
-    if (!user || !user.userId) {
-      return createAuthErrorResponse("Invalid API key structure");
-    }
-
-    // Try to fetch from external WakaTime API first
-    const externalData = await wakatimeApiClient.getStatusbar(user.userId);
-
-    if (externalData) {
-      return createSuccessResponse(externalData);
-    }
-
-    // If external API fails, return empty data (fallback)
+    // For now, we'll just return fallback data since OAuth is not implemented
+    // TODO: Implement proper OAuth token management and remove this shortcut
     return createSuccessResponse({
       data: {
         cached_at: new Date().toISOString(),
@@ -52,6 +40,13 @@ export async function GET(request: NextRequest) {
         category: null,
         language: null,
         is_coding: false,
+        grand_total: {
+          total_seconds: 0,
+          digital: "0s",
+          text: "0s",
+        },
+        projects: [],
+        languages: [],
       },
     });
   } catch (error) {

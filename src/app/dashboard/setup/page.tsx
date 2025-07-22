@@ -419,7 +419,6 @@ function SetupContent() {
                       completePromise
                         .then(async () => {
                           const actions = store.getActions();
-                          actions.setup.setCompleted(true);
                           actions.dashboard.fetchStats();
                           window.location.href = "/dashboard";
                         })

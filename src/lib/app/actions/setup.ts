@@ -1,66 +1,33 @@
 "use server";
 import { auth } from "@/lib/auth";
+import { generateEditorKey } from "@/lib/auth/api-key/generate";
 import { getAuth } from "@/lib/auth/server";
 
-import { createServiceServer } from "@/lib/database/supabase/service-server";
+import { supabaseService } from "@/lib/database/supabase/service-server";
 
 import { nanoid } from "@/lib/utils";
 import { headers } from "next/headers";
 
-// TODO: refactor this whole mess to use manual api key management
 export async function getApiKey(user?: Awaited<ReturnType<typeof getAuth>>) {
   if (!user) {
     user = await getAuth();
     if (!user) return "unauthenticated";
   }
 
-  const supabase = createServiceServer();
+  const key = await generateEditorKey(user.user.id);
 
-  const userApiKeys = (
-    await auth.api.listApiKeys({
-      headers: await headers(),
-    })
-  ).filter(
-    (key) => key.userId === user.user.id && key.name === "Editor API Key",
-  );
-
-  const apiKey =
-    userApiKeys.length === 0
-      ? await auth.api
-          .createApiKey({
-            body: {
-              name: "Editor API Key",
-              prefix: "editor_",
-              userId: user.user.id,
-            },
-          })
-          .then((res) => ({
-            type: "created",
-            key: res.key,
-            body: res,
-          }))
-          .catch((error) => {
-            console.error("Error creating API key:", error);
-          })
-      : await supabase
-          .from("apikey")
-          .select("prefix, key")
-          .eq("user_id", user.user.id)
-          .single()
-          .then((res) => ({
-            type: "fetched",
-            key: `${res.data?.prefix}${res.data?.key}`,
-            body: res,
-          }));
-
-  return apiKey?.key || "error";
+  return key || "error";
 }
 
 export async function generateInstallerKey() {
   const auth = await getAuth();
 
   const apiKey = await getApiKey(auth);
-  const installerToken = `${auth?.user.id}.${apiKey.split("_")[1]}`;
+  if (typeof apiKey === "string") {
+    return apiKey;
+  }
+
+  const installerToken = `${auth?.user.id}.${apiKey.key.split(".")[0]}`;
 
   return {
     apiKey,
@@ -89,20 +56,19 @@ export async function hasSentHeartbeat(): Promise<
 
 export async function getSetupStatus() {
   const auth = await getAuth();
-  const supabase = createServiceServer();
 
   if (!auth?.user.id) {
     return "unauthenticated";
   }
 
-  let setup = await supabase
+  let setup = await supabaseService
     .from("user_setup")
     .select("is_completed, last_updated")
     .eq("user_id", auth.user.id)
     .single();
 
   if (!setup.data) {
-    setup = await supabase
+    setup = await supabaseService
       .from("user_setup")
       .insert({
         id: nanoid(8),
@@ -127,20 +93,19 @@ export async function getSetupStatus() {
 
 export async function completeSetup(state = true) {
   const auth = await getAuth();
-  const supabase = createServiceServer();
 
   if (!auth?.user.id) {
     return "unauthenticated";
   }
 
-  let setup = await supabase
+  let setup = await supabaseService
     .from("user_setup")
     .select("id, is_completed, last_updated")
     .eq("user_id", auth.user.id)
     .single();
 
   if (!setup.data || setup.data.is_completed !== state) {
-    setup = await supabase
+    setup = await supabaseService
       .from("user_setup")
       .upsert({
         id: setup.data?.id || nanoid(8),
@@ -165,13 +130,12 @@ export async function completeSetup(state = true) {
 
 export async function restartSetup() {
   const auth = await getAuth();
-  const supabase = createServiceServer();
 
   if (!auth?.user.id) {
     return "unauthenticated";
   }
 
-  const setup = await supabase
+  const setup = await supabaseService
     .from("user_setup")
     .update({
       is_completed: false,
