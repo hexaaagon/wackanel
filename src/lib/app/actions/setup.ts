@@ -1,12 +1,10 @@
 "use server";
-import { auth } from "@/lib/auth";
 import { generateEditorKey } from "@/lib/auth/api-key/generate";
 import { getAuth } from "@/lib/auth/server";
 
 import { supabaseService } from "@/lib/database/supabase/service-server";
 
 import { nanoid } from "@/lib/utils";
-import { headers } from "next/headers";
 
 export async function getApiKey(user?: Awaited<ReturnType<typeof getAuth>>) {
   if (!user) {
@@ -27,7 +25,7 @@ export async function generateInstallerKey() {
     return apiKey;
   }
 
-  const installerToken = `${auth?.user.id}.${apiKey.key.split(".")[0]}`;
+  const installerToken = apiKey.key;
 
   return {
     apiKey,

@@ -30,9 +30,9 @@ export async function GET(
     return new Response("Invalid file", { status: 400 });
   }
 
-  const [userId, apiKey] = token.split(".");
+  const [userId, time, apiKey] = token.split(".");
 
-  if (!userId || !apiKey) {
+  if (!userId || !time || !apiKey) {
     return new Response("Invalid token format - 01", { status: 400 });
   }
 
@@ -46,7 +46,7 @@ export async function GET(
     return new Response("Invalid token format - 02", { status: 400 });
   }
 
-  if (!validateFormat(apiKey)) {
+  if (!validateFormat(token)) {
     return new Response("Invalid token format - 03", { status: 400 });
   }
 

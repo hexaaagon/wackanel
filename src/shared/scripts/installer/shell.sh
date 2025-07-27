@@ -7,22 +7,8 @@ if [ -f ~/.wakatime.cfg ]; then
     mv ~/.wakatime.cfg ~/.wakatime.cfg.old
 fi
 
-# Define replacement variables with fallback to environment variables
-API_URL_TEMPLATE="{{WACKANEL_API_URL}}"
-API_KEY_TEMPLATE="{{WACKANEL_API_KEY}}"
-
-# If replacement strings are still placeholders, use environment variables
-if [ "$API_URL_TEMPLATE" = "{{WACKANEL_API_URL}}" ]; then
-    WACKANEL_API_URL="$WACKANEL_API_URL"
-else
-    WACKANEL_API_URL="$API_URL_TEMPLATE"
-fi
-
-if [ "$API_KEY_TEMPLATE" = "{{WACKANEL_API_KEY}}" ]; then
-    WACKANEL_API_KEY="$WACKANEL_API_KEY"
-else
-    WACKANEL_API_KEY="$API_KEY_TEMPLATE"
-fi
+WACKANEL_API_URL="{{WACKANEL_API_URL}}"
+WACKANEL_API_KEY="{{WACKANEL_API_KEY}}"
 
 # Create or update config file
 cat > ~/.wakatime.cfg << EOL
@@ -38,8 +24,8 @@ if [ ! -f ~/.wakatime.cfg ]; then
   exit 1
 fi
 
-API_URL=$(sed -n 's/.*api_url = \(.*\)/\1/p' ~/.wakatime.cfg)
-API_KEY=$(sed -n 's/.*api_key = \(.*\)/\1/p' ~/.wakatime.cfg)
+API_URL=$(sed -n 's/^api_url = \(.*\)$/\1/p' ~/.wakatime.cfg)
+API_KEY=$(sed -n 's/^api_key = \(.*\)$/\1/p' ~/.wakatime.cfg)
 
 if [ -z "$API_URL" ] || [ -z "$API_KEY" ]; then
   echo "Error: Could not read api_url or api_key from config"
@@ -55,12 +41,12 @@ echo "Sending test heartbeat..."
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/users/current/heartbeats" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
-  -d "[{\"type\":\"file\",\"time\":$(date +%s),\"entity\":\"test.txt\",\"language\":\"Text\"}]")
+  -d "[{\"type\":\"file\",\"time\":$(date +%s),\"entity\":\"test.txt\",\"category\":\"coding\",\"language\":\"Text\"}]")
 
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 
-if [ "$http_code" = "200" ] || [ "$http_code" = "202" ]; then
+if [ "$http_code" = "200" ] || [ "$http_code" = "201" ] || [ "$http_code" = "202" ]; then
   echo -e "\nTest heartbeat sent successfully"
   echo -e "\nWackanel setup complete!"
   echo -e "Ready to track!"
