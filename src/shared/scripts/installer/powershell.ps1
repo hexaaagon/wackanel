@@ -26,28 +26,62 @@ api_key = $apiKey
 
     if (Test-Path $configPath) {
         $config = Get-Content $configPath
-        $apiUrl = ($config | Select-String "api_url").ToString().Split('=')[1].Trim()
-        $apiKey = ($config | Select-String "api_key").ToString().Split('=')[1].Trim()
+        $apiUrlLine = $config | Select-String "api_url"
+        $apiKeyLine = $config | Select-String "api_key"
         
-        Write-Host "API URL: $apiUrl"
-        Write-Host ("API Key: " + $apiKey.Substring(0,4) + "..." + $apiKey.Substring($apiKey.Length-4))  # Show first/last 4 chars
-        
-        Write-Host "Sending test heartbeat..."
-        $time = [Math]::Floor([decimal](Get-Date(Get-Date).ToUniversalTime()-uformat '%s'))
-        $heartbeat = @{
-            type = 'file'
-            time = $time
-            entity = 'test.txt'
-            language = 'Text'
+        if ($apiUrlLine) {
+            $apiUrl = $apiUrlLine.ToString().Split('=')[1].Trim()
+        } else {
+            $apiUrl = ""
         }
         
-        $response = Invoke-RestMethod -Uri "$apiUrl/users/current/heartbeats" `
-            -Method Post `
-            -Headers @{Authorization="Bearer $apiKey"} `
-            -ContentType 'application/json' `
-            -Body "[$($heartbeat | ConvertTo-Json)]"
+        if ($apiKeyLine) {
+            $apiKey = $apiKeyLine.ToString().Split('=')[1].Trim()
+        } else {
+            $apiKey = ""
+        }
+        
+        Write-Host "API URL: $apiUrl"
+        
+        # Safely display API key
+        if ($apiKey -and $apiKey.Length -gt 8) {
+            Write-Host ("API Key: " + $apiKey.Substring(0,4) + "..." + $apiKey.Substring($apiKey.Length-4))
+        } elseif ($apiKey -and $apiKey.Length -gt 0) {
+            Write-Host ("API Key: " + $apiKey.Substring(0, [Math]::Min(4, $apiKey.Length)) + "...")
+        } else {
+            Write-Host "API Key: (empty or invalid)"
+        }
+        
+        # Validate credentials before sending test heartbeat
+        if (-not $apiUrl -or $apiUrl.Trim() -eq "" -or $apiUrl -eq "{{WACKANEL_API_URL}}") {
+            Write-Host "WARNING: API URL is empty or not configured properly" -ForegroundColor Yellow
+            Write-Host "Skipping test heartbeat..." -ForegroundColor Yellow
+        } elseif (-not $apiKey -or $apiKey.Trim() -eq "" -or $apiKey -eq "{{WACKANEL_API_KEY}}") {
+            Write-Host "WARNING: API Key is empty or not configured properly" -ForegroundColor Yellow
+            Write-Host "Skipping test heartbeat..." -ForegroundColor Yellow
+        } else {
+            Write-Host "Sending test heartbeat..."
+            $time = [Math]::Floor([decimal](Get-Date(Get-Date).ToUniversalTime()-uformat '%s'))
+            $heartbeat = @{
+                type = 'file'
+                time = $time
+                entity = 'test.txt'
+                language = 'Text'
+            }
             
-        Write-Host "Test heartbeat sent successfully"
+            try {
+                $response = Invoke-RestMethod -Uri "$apiUrl/users/current/heartbeats" `
+                    -Method Post `
+                    -Headers @{Authorization="Bearer $apiKey"} `
+                    -ContentType 'application/json' `
+                    -Body "[$($heartbeat | ConvertTo-Json)]"
+                    
+                Write-Host "Test heartbeat sent successfully" -ForegroundColor Green
+            } catch {
+                Write-Host "WARNING: Test heartbeat failed: $($_.Exception.Message)" -ForegroundColor Yellow
+                Write-Host "This might be normal if the server is not running or credentials are incorrect." -ForegroundColor Yellow
+            }
+        }
         
         Write-Host "`nWackanel setup complete!" -ForegroundColor Green
         Write-Host "Ready to track!" -ForegroundColor Green

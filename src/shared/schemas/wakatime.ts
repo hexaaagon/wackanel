@@ -12,10 +12,13 @@ export const selectPendingHeartbeatSchema = createSelectSchema(
 
 // WakaTime API heartbeat schema (based on WakaTime API spec)
 export const wakatimeHeartbeatSchema = z.object({
-  time: z.number().int().positive(),
+  time: z
+    .number()
+    .positive()
+    .transform((val) => Math.floor(val)), // Accept float, convert to int
   entity: z.string().min(1),
   type: z.enum(["file", "domain", "app", "url"]),
-  category: z.string().min(1),
+  category: z.string().min(1).optional().default("coding"), // Make optional with default
   project: z.string().optional(),
   project_root_count: z.number().int().optional(),
   branch: z.string().optional(),
@@ -27,6 +30,7 @@ export const wakatimeHeartbeatSchema = z.object({
   lineno: z.number().int().optional(),
   cursorpos: z.union([z.string(), z.number().int().nonnegative()]).optional(),
   is_write: z.boolean().optional(),
+  user_agent: z.string().optional(), // Add user_agent field that WakaTime sends
 });
 
 // Schema for single heartbeat request

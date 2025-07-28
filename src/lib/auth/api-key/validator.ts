@@ -1,15 +1,10 @@
 import { supabaseService } from "@/lib/database/supabase/service-server";
 import { apiKeyValidationCache } from "@/lib/backend/cache/auth";
 import { generateCacheKey } from "@/lib/backend/cache/utils";
-import { generateString } from "./generate";
+import { validate as uuidValidate } from "uuid";
 
 export function validateFormat(apiKey: string): boolean {
-  const parts = apiKey.split(".");
-  return (
-    parts.length === 3 &&
-    parts.every((part) => part.length > 0) &&
-    parts[2].length === 48
-  );
+  return uuidValidate(apiKey);
 }
 
 export async function validateEditorUser(apiKey: string): Promise<
@@ -22,18 +17,10 @@ export async function validateEditorUser(apiKey: string): Promise<
       error: string;
     }
 > {
-  const [userId, timestampHash, randomPart] = apiKey.split(".");
-
-  if (!userId || !timestampHash || !randomPart)
-    return {
-      valid: false,
-      error: "Invalid API key format - 01",
-    };
-
   if (!validateFormat(apiKey))
     return {
       valid: false,
-      error: "Invalid API key format - 02",
+      error: "Invalid API key format",
     };
 
   const cacheKey = generateCacheKey("editorApiKey", apiKey);
@@ -44,8 +31,8 @@ export async function validateEditorUser(apiKey: string): Promise<
 
   const { data, error } = await supabaseService
     .from("editor_apikey")
-    .select("key")
-    .eq("user_id", userId)
+    .select("key, user_id")
+    .eq("key", apiKey)
     .single();
 
   if (error || !data?.key) {
@@ -58,16 +45,10 @@ export async function validateEditorUser(apiKey: string): Promise<
     return result;
   }
 
-  const result =
-    data.key === apiKey
-      ? {
-          valid: true as const,
-          userId: data.key,
-        }
-      : {
-          valid: false as const,
-          error: "Invalid API key",
-        };
+  const result = {
+    valid: true as const,
+    userId: data.user_id,
+  };
 
   apiKeyValidationCache.set(cacheKey, result);
   return result;

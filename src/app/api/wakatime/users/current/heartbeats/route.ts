@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/database/drizzle";
-import { wakatimePendingHeartbeats } from "@/lib/database/drizzle/schema/wakatime";
-import { validateEditorUser } from "@/lib/auth/api-key/validator";
+import { validateWakatimeApiAuth } from "@/lib/auth/wakatime-api-auth";
+import { heartbeatService } from "@/lib/backend/services/heartbeat";
 import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { wakapiClient } from "@/lib/backend/client/wakapi";
 import {
@@ -25,35 +24,25 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      if (isDev)
-        console.log("❌ [WakaTime API] Missing/invalid Authorization header");
-      return createAuthErrorResponse("Missing or invalid Authorization header");
-    }
+    // Validate authentication (supports both API key and session)
+    const authResult = await validateWakatimeApiAuth(request);
 
-    const apiKey = authHeader.replace("Bearer ", "");
-    if (isDev)
-      console.log("🔑 [WakaTime API] API Key:", `${apiKey.substring(0, 8)}...`);
-
-    const apiKeyValidation = await validateEditorUser(apiKey);
-
-    if (!apiKeyValidation.valid) {
-      if (isDev)
+    if (!authResult.success) {
+      if (isDev) {
         console.log(
-          "❌ [WakaTime API] API key validation failed:",
-          apiKeyValidation.error,
+          "❌ [WakaTime API] Authentication failed:",
+          authResult.error,
         );
-      return createAuthErrorResponse(
-        apiKeyValidation.error || "Invalid API key",
-      );
+      }
+      return createAuthErrorResponse(authResult.error);
     }
 
-    if (isDev)
+    if (isDev) {
       console.log(
-        "✅ [WakaTime API] API key validated for user:",
-        apiKeyValidation.userId,
+        `✅ [WakaTime API] Authenticated via ${authResult.authMethod} for user:`,
+        authResult.userId,
       );
+    }
 
     let body;
     try {
@@ -99,10 +88,65 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // TODO: Implement proper OAuth token management and remove this shortcut
-    const response = heartbeats.map(() => ({
-      data: null,
-      status: 201,
+    // Process heartbeats using the heartbeat service
+    const result = await heartbeatService.processHeartbeats(
+      authResult.userId,
+      heartbeats,
+    );
+
+    if (!result.success && result.errors.length > 0) {
+      if (isDev) {
+        console.log("⚠️ [WakaTime API] Processing warnings:", result.errors);
+      }
+    }
+
+    if (isDev) {
+      console.log(
+        `✅ [WakaTime API] Processed ${result.processed} heartbeats, queued ${result.queued} for external instances`,
+      );
+    }
+
+    // Forward heartbeats to WakaTime and Wakapi instances in real-time
+    try {
+      // Send to WakaTime
+      await wakatimeApiClient.sendHeartbeat(authResult.userId, heartbeats);
+      if (isDev) {
+        console.log("✅ [WakaTime API] Heartbeats forwarded to WakaTime");
+      }
+    } catch (error) {
+      if (isDev) {
+        console.log("⚠️ [WakaTime API] Failed to forward to WakaTime:", error);
+      }
+    }
+
+    try {
+      // Send to all Wakapi instances
+      await wakapiClient.sendHeartbeatToAllInstances(
+        authResult.userId,
+        heartbeats,
+      );
+      if (isDev) {
+        console.log(
+          "✅ [WakaTime API] Heartbeats forwarded to Wakapi instances",
+        );
+      }
+    } catch (error) {
+      if (isDev) {
+        console.log(
+          "⚠️ [WakaTime API] Failed to forward to Wakapi instances:",
+          error,
+        );
+      }
+    }
+
+    // Return WakaTime-compatible response
+    const response = heartbeats.map((heartbeat) => ({
+      data: {
+        id: `hb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        entity: heartbeat.entity,
+        type: heartbeat.type,
+        time: heartbeat.time,
+      },
     }));
 
     if (isDev) {
@@ -112,7 +156,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(response, { status: 201 });
+    return createSuccessResponse(response, 202);
   } catch (error) {
     if (isDev) {
       console.log("💥 [WakaTime API] Unhandled error:", error);

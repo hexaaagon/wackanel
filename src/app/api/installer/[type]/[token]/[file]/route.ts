@@ -30,24 +30,8 @@ export async function GET(
     return new Response("Invalid file", { status: 400 });
   }
 
-  const [userId, time, apiKey] = token.split(".");
-
-  if (!userId || !time || !apiKey) {
-    return new Response("Invalid token format - 01", { status: 400 });
-  }
-
-  const account = await supabaseService
-    .from("user")
-    .select("id")
-    .eq("id", userId)
-    .single();
-
-  if (!account) {
-    return new Response("Invalid token format - 02", { status: 400 });
-  }
-
   if (!validateFormat(token)) {
-    return new Response("Invalid token format - 03", { status: 400 });
+    return new Response("Invalid token format", { status: 400 });
   }
 
   const script = await generateScript(

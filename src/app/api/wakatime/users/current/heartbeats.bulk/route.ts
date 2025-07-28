@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/database/drizzle";
-import { wakatimePendingHeartbeats } from "@/lib/database/drizzle/schema/wakatime";
-import { validateEditorUser } from "@/lib/auth/api-key/validator";
+import { validateWakatimeApiAuth } from "@/lib/auth/wakatime-api-auth";
+import { heartbeatService } from "@/lib/backend/services/heartbeat";
 import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { wakapiClient } from "@/lib/backend/client/wakapi";
 import { bulkHeartbeatsRequestSchema } from "@/shared/schemas/wakatime";
@@ -22,40 +21,25 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      if (isDev)
+    // Validate authentication (supports both API key and session)
+    const authResult = await validateWakatimeApiAuth(request);
+
+    if (!authResult.success) {
+      if (isDev) {
         console.log(
-          "❌ [WakaTime Bulk API] Missing/invalid Authorization header",
+          "❌ [WakaTime Bulk API] Authentication failed:",
+          authResult.error,
         );
-      return createAuthErrorResponse("Missing or invalid Authorization header");
+      }
+      return createAuthErrorResponse(authResult.error);
     }
 
-    const apiKey = authHeader.replace("Bearer ", "");
-    if (isDev)
+    if (isDev) {
       console.log(
-        "🔑 [WakaTime Bulk API] API Key:",
-        `${apiKey.substring(0, 8)}...`,
-      );
-
-    const apiKeyValidation = await validateEditorUser(apiKey);
-
-    if (apiKeyValidation.valid === false) {
-      if (isDev)
-        console.log(
-          "❌ [WakaTime Bulk API] API key validation failed:",
-          apiKeyValidation.error,
-        );
-      return createAuthErrorResponse(
-        apiKeyValidation.error || "Invalid API key",
+        `✅ [WakaTime Bulk API] Authenticated via ${authResult.authMethod} for user:`,
+        authResult.userId,
       );
     }
-
-    if (isDev)
-      console.log(
-        "✅ [WakaTime Bulk API] API key validated for user:",
-        apiKeyValidation.userId,
-      );
 
     let body;
     try {
@@ -102,14 +86,102 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // For now, we'll just return success without forwarding to external services
-    // This is because the WakaTime OAuth implementation is not complete
-    // TODO: Implement proper OAuth token management and remove this shortcut
+    // Process heartbeats using the heartbeat service (for local storage)
+    const result = await heartbeatService.processHeartbeats(
+      authResult.userId,
+      heartbeats,
+    );
 
+    if (!result.success && result.errors.length > 0) {
+      if (isDev) {
+        console.log(
+          "⚠️ [WakaTime Bulk API] Processing warnings:",
+          result.errors,
+        );
+      }
+    }
+
+    // Convert heartbeats to WakaTime format for forwarding
+    const wakatimeHeartbeats = heartbeats.map((hb) => ({
+      time: hb.time,
+      entity: hb.entity,
+      type: hb.type,
+      category: hb.category || "coding",
+      project: hb.project,
+      project_root_count: hb.project_root_count,
+      branch: hb.branch,
+      language: hb.language,
+      dependencies: hb.dependencies,
+      lines: hb.lines,
+      line_additions: hb.line_additions,
+      line_deletions: hb.line_deletions,
+      lineno: hb.lineno,
+      cursorpos: hb.cursorpos,
+      is_write: hb.is_write,
+    }));
+
+    // Forward directly to WakaTime
+    let wakatimeSuccess = false;
+    try {
+      // Check if user has OAuth token first
+      const hasToken = await wakatimeApiClient.hasValidToken(authResult.userId);
+      if (isDev) {
+        console.log(
+          `🔑 [WakaTime Bulk API] OAuth token available: ${hasToken ? "YES" : "NO"}`,
+        );
+      }
+
+      wakatimeSuccess = await wakatimeApiClient.sendHeartbeat(
+        authResult.userId,
+        wakatimeHeartbeats,
+      );
+      if (isDev) {
+        console.log(
+          `🚀 [WakaTime Bulk API] WakaTime forward: ${wakatimeSuccess ? "SUCCESS" : "FAILED"}`,
+        );
+      }
+    } catch (error) {
+      if (isDev) {
+        console.log("❌ [WakaTime Bulk API] WakaTime forward error:", error);
+      }
+    }
+
+    // Forward directly to Wakapi instances
+    let wakapiResults: { successful: string[]; failed: string[] } = {
+      successful: [],
+      failed: [],
+    };
+    try {
+      wakapiResults = await wakapiClient.sendHeartbeatToAllInstances(
+        authResult.userId,
+        wakatimeHeartbeats,
+      );
+      if (isDev) {
+        console.log(
+          `🚀 [WakaTime Bulk API] Wakapi forward: ${wakapiResults.successful.length} success, ${wakapiResults.failed.length} failed`,
+        );
+      }
+    } catch (error) {
+      if (isDev) {
+        console.log("❌ [WakaTime Bulk API] Wakapi forward error:", error);
+      }
+    }
+
+    if (isDev) {
+      console.log(
+        `✅ [WakaTime Bulk API] Processed ${result.processed} heartbeats locally, forwarded to ${wakatimeSuccess ? 1 : 0} WakaTime + ${wakapiResults.successful.length} Wakapi instances`,
+      );
+    }
+
+    // Return WakaTime-compatible bulk response
     const response = {
-      responses: heartbeats.map(() => ({
-        data: null,
-        status: 201,
+      responses: heartbeats.map((heartbeat) => ({
+        data: {
+          id: `hb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          entity: heartbeat.entity,
+          type: heartbeat.type,
+          time: heartbeat.time,
+        },
       })),
     };
 
@@ -121,7 +193,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Always return success to the client (WakaTime API behavior)
-    return createSuccessResponse(response, 201);
+    return createSuccessResponse(response, 202);
   } catch (error) {
     if (isDev) {
       console.log("💥 [WakaTime Bulk API] Unhandled error:", error);
