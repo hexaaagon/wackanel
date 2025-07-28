@@ -163,7 +163,7 @@ export default function Step5() {
             Add Instance
           </Button>
 
-          {newInstanceUrl === "https://waka.hackclub.com" && (
+          {newInstanceUrl.includes("waka.hackclub.com") && (
             <Alert variant="warning">
               <p className="text-sm">
                 You can&apos;t add both the Hack Club Wakapi (Hackatime v1) and
@@ -178,14 +178,16 @@ export default function Step5() {
             </h5>
             <div className="space-y-2">
               <button
-                onClick={() => setNewInstanceUrl("https://wakapi.dev")}
+                onClick={() => setNewInstanceUrl("https://wakapi.dev/api")}
                 className="block text-sm text-blue-600 hover:underline"
               >
                 https://wakapi.dev (Official public instance)
               </button>
               <button
                 onClick={() =>
-                  setNewInstanceUrl("https://hackatime.hackclub.com")
+                  setNewInstanceUrl(
+                    "https://hackatime.hackclub.com/api/hackatime/v1",
+                  )
                 }
                 className="block text-sm text-blue-600 hover:underline"
               >

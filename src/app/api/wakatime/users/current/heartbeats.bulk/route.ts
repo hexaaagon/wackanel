@@ -3,6 +3,7 @@ import { validateWakatimeApiAuth } from "@/lib/auth/wakatime-api-auth";
 import { heartbeatService } from "@/lib/backend/services/heartbeat";
 import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { wakapiClient } from "@/lib/backend/client/wakapi";
+import { markSetupCompleteOnFirstHeartbeat } from "@/lib/app/actions/setup";
 import { bulkHeartbeatsRequestSchema } from "@/shared/schemas/wakatime";
 import {
   createValidationErrorResponse,
@@ -101,6 +102,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Mark setup as complete on first successful heartbeat
+    if (result.processed > 0) {
+      try {
+        await markSetupCompleteOnFirstHeartbeat(authResult.userId);
+        if (isDev) {
+          console.log(
+            "✅ [WakaTime Bulk API] Setup marked as complete on first heartbeat",
+          );
+        }
+      } catch (error) {
+        if (isDev) {
+          console.log(
+            "⚠️ [WakaTime Bulk API] Failed to mark setup complete:",
+            error,
+          );
+        }
+      }
+    }
+
     // Convert heartbeats to WakaTime format for forwarding
     const wakatimeHeartbeats = heartbeats.map((hb) => ({
       time: hb.time,
@@ -173,17 +193,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return WakaTime-compatible bulk response
-    const response = {
-      responses: heartbeats.map((heartbeat) => ({
-        data: {
-          id: `hb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          entity: heartbeat.entity,
-          type: heartbeat.type,
-          time: heartbeat.time,
-        },
-      })),
-    };
+    // Return WakaTime-compatible bulk response (flat array format)
+    const response = heartbeats.map((heartbeat) => ({
+      data: {
+        id: `hb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        entity: heartbeat.entity,
+        type: heartbeat.type,
+        time: heartbeat.time,
+      },
+    }));
 
     if (isDev) {
       console.log(

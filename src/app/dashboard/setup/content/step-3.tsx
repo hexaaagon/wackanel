@@ -19,6 +19,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   generateInstallerKey,
   hasSentHeartbeat,
+  getSetupStatus,
 } from "@/lib/app/actions/setup";
 import { executeInstall } from "@/shared/scripts/installer/execute";
 
@@ -60,6 +61,23 @@ export default function Step3({
 
   const checkHeartbeat = useCallback(async () => {
     try {
+      // First check if setup is completed
+      const setupStatus = await getSetupStatus();
+      if (
+        setupStatus !== "unauthenticated" &&
+        setupStatus !== "error" &&
+        setupStatus.isCompleted
+      ) {
+        setIsConnected(true);
+        onConnectionChange?.(true);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        return;
+      }
+
+      // If setup is not completed, check for heartbeats
       const result = await hasSentHeartbeat();
       if (result.sent) {
         setIsConnected(true);
@@ -80,6 +98,19 @@ export default function Step3({
         setIsConnecting(true);
 
         try {
+          // First check if setup is already completed
+          const setupStatus = await getSetupStatus();
+          if (
+            setupStatus !== "unauthenticated" &&
+            setupStatus !== "error" &&
+            setupStatus.isCompleted
+          ) {
+            setIsConnected(true);
+            onConnectionChange?.(true);
+            setIsConnecting(false);
+            return;
+          }
+
           const key = await generateInstallerKey();
           if (key === "unauthenticated") {
             console.error("Failed to generate installer key");
@@ -116,7 +147,7 @@ export default function Step3({
 
       autoConnect();
     }
-  }, [detectedOS, apiKey, isConnecting, checkHeartbeat]);
+  }, [detectedOS, apiKey, isConnecting, checkHeartbeat, onConnectionChange]);
 
   const startPolling = () => {
     if (intervalRef.current) {

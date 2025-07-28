@@ -42,14 +42,33 @@ export async function hasSentHeartbeat(): Promise<
       lastSent: Date;
     }
 > {
-  return Math.random() > 0.5
-    ? {
-        sent: false,
-      }
-    : {
+  const auth = await getAuth();
+
+  if (!auth?.user.id) {
+    return { sent: false };
+  }
+
+  try {
+    const heartbeat = await supabaseService
+      .from("user_wakatime_heartbeats")
+      .select("updated_at")
+      .eq("user_id", auth.user.id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (heartbeat.data && heartbeat.data.updated_at) {
+      return {
         sent: true,
-        lastSent: new Date(Date.now() - Math.floor(Math.random() * 1000 * 60)),
+        lastSent: new Date(heartbeat.data.updated_at),
       };
+    }
+
+    return { sent: false };
+  } catch (error) {
+    console.error("Error checking heartbeat:", error);
+    return { sent: false };
+  }
 }
 
 export async function getSetupStatus() {
@@ -124,6 +143,32 @@ export async function completeSetup(state = true) {
     isCompleted: setup.data.is_completed,
     lastUpdated: setup.data.last_updated,
   };
+}
+
+export async function markSetupCompleteOnFirstHeartbeat(userId: string) {
+  try {
+    // Check if setup is already completed
+    const existingSetup = await supabaseService
+      .from("user_setup")
+      .select("is_completed")
+      .eq("user_id", userId)
+      .single();
+
+    // If setup doesn't exist or is not completed, mark it as complete
+    if (!existingSetup.data || !existingSetup.data.is_completed) {
+      await supabaseService
+        .from("user_setup")
+        .upsert({
+          id: nanoid(8),
+          user_id: userId,
+          is_completed: true,
+          last_updated: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+    }
+  } catch (error) {
+    console.error("Error marking setup complete on first heartbeat:", error);
+  }
 }
 
 export async function restartSetup() {

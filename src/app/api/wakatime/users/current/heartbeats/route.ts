@@ -3,6 +3,7 @@ import { validateWakatimeApiAuth } from "@/lib/auth/wakatime-api-auth";
 import { heartbeatService } from "@/lib/backend/services/heartbeat";
 import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { wakapiClient } from "@/lib/backend/client/wakapi";
+import { markSetupCompleteOnFirstHeartbeat } from "@/lib/app/actions/setup";
 import {
   heartbeatsRequestSchema,
   type WakatimeHeartbeat,
@@ -104,6 +105,25 @@ export async function POST(request: NextRequest) {
       console.log(
         `✅ [WakaTime API] Processed ${result.processed} heartbeats, queued ${result.queued} for external instances`,
       );
+    }
+
+    // Mark setup as complete on first successful heartbeat
+    if (result.processed > 0) {
+      try {
+        await markSetupCompleteOnFirstHeartbeat(authResult.userId);
+        if (isDev) {
+          console.log(
+            "✅ [WakaTime API] Setup marked as complete on first heartbeat",
+          );
+        }
+      } catch (error) {
+        if (isDev) {
+          console.log(
+            "⚠️ [WakaTime API] Failed to mark setup complete:",
+            error,
+          );
+        }
+      }
     }
 
     // Forward heartbeats to WakaTime and Wakapi instances in real-time
