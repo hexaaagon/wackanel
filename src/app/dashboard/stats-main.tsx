@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import InstancesChart from "@/components/app/instances-chart";
+import { useInstanceStatus } from "@/lib/app/hooks/useInstanceStatus";
 import Link from "next/link";
 
 export default function MainStats({
@@ -19,6 +21,9 @@ export default function MainStats({
 }) {
   const hours = Math.floor(totalActivity / 60);
   const minutes = totalActivity % 60;
+
+  const { status: instanceStatus, isLoading: instancesLoading } =
+    useInstanceStatus();
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -45,17 +50,25 @@ export default function MainStats({
           )}
         </CardFooter>
       </Card>
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Instances</CardTitle>
-          <CardDescription>
-            Overview of instance status and activity.
-          </CardDescription>
-        </CardHeader>
-        <CardDescription>
-          <Skeleton className="mx-8 h-12" />
-        </CardDescription>
-      </Card>
+
+      {instancesLoading ? (
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Instances</CardTitle>
+            <CardDescription>
+              Overview of instance status and activity.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="mx-8 h-12" />
+          </CardContent>
+        </Card>
+      ) : (
+        <InstancesChart
+          onlineCount={instanceStatus.onlineCount}
+          offlineCount={instanceStatus.offlineCount}
+        />
+      )}
     </div>
   );
 }
