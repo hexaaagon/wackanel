@@ -91,14 +91,14 @@ export default function InstancesChart({
   };
 
   return (
-    <Card className="bg-secondary-background text-foreground w-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Instances</CardTitle>
-        <CardDescription className="text-xs">
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Instances</CardTitle>
+        <CardDescription>
           Overview of instance status and activity
         </CardDescription>
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent>
         <div className="flex items-center gap-4">
           <ChartContainer
             config={chartConfig}

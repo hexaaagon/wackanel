@@ -786,7 +786,7 @@ export function ChartAreaInteractive({
   const yesterdayArea = getYesterdayArea;
 
   return (
-    <Card className="bg-secondary-background text-foreground">
+    <Card>
       <CardHeader className="flex flex-col items-center gap-4 space-y-0 sm:flex-row sm:gap-2">
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle>Your Wakatime Activity - Last {timeRangeLabel}</CardTitle>
