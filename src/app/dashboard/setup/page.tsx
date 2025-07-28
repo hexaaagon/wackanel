@@ -27,6 +27,10 @@ import Step3M from "./content/step-3m";
 import Step4 from "./content/step-4";
 import Step5 from "./content/step-5";
 import { completeSetup, restartSetup } from "@/lib/app/actions/setup";
+import {
+  saveWakapiInstances,
+  type WakapiInstanceData,
+} from "@/lib/app/actions/instance";
 import { toast } from "sonner";
 import { store } from "@/lib/app/store";
 
@@ -48,12 +52,42 @@ function SetupContent() {
   >(null);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
   const [pageAhead, setPageAhead] = useState(0);
+  const [instances, setInstances] = useState<WakapiInstanceData[]>([]);
+  const [isSavingInstances, setSavingInstances] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const handleStep3Connection = useCallback((connected: boolean) => {
     setIsStep3Connected(connected);
   }, []);
+
+  const handleInstancesChange = useCallback(
+    (newInstances: WakapiInstanceData[]) => {
+      setInstances(newInstances);
+    },
+    [],
+  );
+
+  const handleSaveInstancesAndProceed = async () => {
+    setSavingInstances(true);
+
+    const savePromise = saveWakapiInstances(instances);
+
+    toast.promise(savePromise, {
+      loading: "Saving Wakapi instances...",
+      success: "Instances saved successfully!",
+      error: "Failed to save instances",
+    });
+
+    try {
+      await savePromise;
+      router.push("/dashboard/setup?page=5");
+    } catch (error) {
+      console.error("Failed to save instances:", error);
+    } finally {
+      setSavingInstances(false);
+    }
+  };
 
   const currentPage = parseInt(searchParams.get("page") || "1");
   const isManualSetup = searchParams.get("manual") === "true";
@@ -324,6 +358,7 @@ function SetupContent() {
               completedType,
               isCompleted,
               setIsCompleted,
+              handleInstancesChange,
             )}
           </CardContent>
         </Card>
@@ -349,9 +384,15 @@ function SetupContent() {
                     asChild
                     size="sm"
                     className="text-xs sm:text-sm"
+                    disabled={isSavingInstances}
                   >
                     <Link
                       href={`/dashboard/setup?page=${isManualSetup ? 3 : currentPage - 1}`}
+                      className={
+                        isSavingInstances
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
                     >
                       <ArrowLeft className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
                       Previous
@@ -366,12 +407,16 @@ function SetupContent() {
                       asChild
                       size="sm"
                       className="text-xs sm:text-sm"
-                      disabled={pageAhead !== 0 || !isStep3Connected}
+                      disabled={
+                        pageAhead !== 0 ||
+                        !isStep3Connected ||
+                        isSavingInstances
+                      }
                     >
                       <Link
                         href={`/dashboard/setup?page=4`}
                         className={
-                          !isStep3Connected
+                          !isStep3Connected || isSavingInstances
                             ? "pointer-events-none opacity-50"
                             : ""
                         }
@@ -383,10 +428,32 @@ function SetupContent() {
                         <ArrowRight className="ml-1 h-3 w-3" />
                       </Link>
                     </Button>
+                  ) : currentPage === 4 ? (
+                    <Button
+                      size="sm"
+                      className="text-xs sm:text-sm"
+                      disabled={isSavingInstances}
+                      onClick={handleSaveInstancesAndProceed}
+                    >
+                      {isSavingInstances ? "Saving..." : "Next"}
+                      {!isSavingInstances && (
+                        <ArrowRight className="ml-1 h-3 w-3" />
+                      )}
+                    </Button>
                   ) : (
-                    <Button asChild size="sm" className="text-xs sm:text-sm">
+                    <Button
+                      asChild
+                      size="sm"
+                      className="text-xs sm:text-sm"
+                      disabled={isSavingInstances}
+                    >
                       <Link
                         href={`/dashboard/setup?page=${currentPage + 1}`}
+                        className={
+                          isSavingInstances
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
                         onClick={() => {
                           setPageAhead(currentPage + 1);
                         }}
@@ -397,8 +464,20 @@ function SetupContent() {
                     </Button>
                   )
                 ) : isManualSetup ? (
-                  <Button asChild size="sm" className="text-xs sm:text-sm">
-                    <Link href="/dashboard/setup?page=4">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="text-xs sm:text-sm"
+                    disabled={isSavingInstances}
+                  >
+                    <Link
+                      href="/dashboard/setup?page=4"
+                      className={
+                        isSavingInstances
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
+                    >
                       <span className="hidden sm:inline">
                         Continue to Wakapi Setup
                       </span>
@@ -410,7 +489,7 @@ function SetupContent() {
                   <Button
                     size="sm"
                     className="cursor-pointer text-xs sm:text-sm"
-                    disabled={isCompleted}
+                    disabled={isCompleted || isSavingInstances}
                     onClick={async () => {
                       if (isCompleted) return;
                       const completePromise = completeSetup();
@@ -491,6 +570,7 @@ function getPageContent(
   completedType: "reconnect-wakatime" | "modify-instances" | null = null,
   isCompleted: boolean = false,
   setIsCompleted?: (completed: boolean) => void,
+  onInstancesChange?: (instances: WakapiInstanceData[]) => void,
 ): React.ReactNode {
   if (completedType === "reconnect-wakatime") {
     return isManual ? (
@@ -501,7 +581,7 @@ function getPageContent(
   }
 
   if (completedType === "modify-instances") {
-    return <Step4 />;
+    return <Step4 onInstancesChange={onInstancesChange} />;
   }
 
   if (isManual) return <Step3M />;
@@ -516,7 +596,7 @@ function getPageContent(
         <Step3 isReconnectMode={false} onConnectionChange={onStep3Connection} />
       );
     case 4:
-      return <Step4 />;
+      return <Step4 onInstancesChange={onInstancesChange} />;
     case 5:
       return (
         <Step5 isCompleted={isCompleted} setIsCompleted={setIsCompleted} />

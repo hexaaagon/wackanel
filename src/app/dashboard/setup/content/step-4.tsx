@@ -1,28 +1,58 @@
 import { Server, Plus, Trash2, CheckCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, CodeBlock } from "@/components/app/setup";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { getUserInstances } from "@/lib/app/actions/instance";
 
 interface WakapiInstance {
   id: string;
   name: string;
   url: string;
+  apiKey: string;
   status: "connected" | "connecting" | "error";
 }
 
-export default function Step5() {
+interface Step4Props {
+  onInstancesChange?: (instances: WakapiInstance[]) => void;
+}
+
+export default function Step4({ onInstancesChange }: Step4Props) {
   const [instances, setInstances] = useState<WakapiInstance[]>([]);
   const [newInstanceUrl, setNewInstanceUrl] = useState("");
-  const [wakapiToken, setWakapiToken] = useState("");
+  const [newInstanceKey, setNewInstanceKey] = useState("");
   const [isTestingInstance, setIsTestingInstance] = useState(false);
+  const [isLoadingExisting, setIsLoadingExisting] = useState(true);
+
+  // Load existing instances when component mounts
+  useEffect(() => {
+    const loadExistingInstances = async () => {
+      setIsLoadingExisting(true);
+      try {
+        const existingInstances = await getUserInstances();
+        setInstances(existingInstances);
+      } catch (error) {
+        console.error("Error loading existing instances:", error);
+      } finally {
+        setIsLoadingExisting(false);
+      }
+    };
+
+    loadExistingInstances();
+  }, []);
+
+  // Call the callback whenever instances change
+  useEffect(() => {
+    if (onInstancesChange) {
+      onInstancesChange(instances);
+    }
+  }, [instances, onInstancesChange]);
 
   const testWakapiInstance = async (
     url: string,
     token: string,
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Clean up URL - remove trailing slash and ensure proper format
       const cleanUrl = url.replace(/\/$/, "");
       const testUrl = `${cleanUrl}/users/current/statusbar/today`;
 
@@ -32,7 +62,7 @@ export default function Step5() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        signal: AbortSignal.timeout(10000), // 10 second timeout
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {
@@ -51,7 +81,6 @@ export default function Step5() {
         }
       }
 
-      // Try to parse the response to ensure it's valid JSON
       await response.json();
       return { success: true };
     } catch (error) {
@@ -78,23 +107,44 @@ export default function Step5() {
   };
 
   const addInstance = async () => {
-    if (newInstanceUrl && wakapiToken) {
+    if (newInstanceUrl && newInstanceKey) {
       setIsTestingInstance(true);
 
       const newInstance: WakapiInstance = {
         id: Date.now().toString(),
         name: `Instance ${instances.length + 1}`,
         url: newInstanceUrl,
+        apiKey: newInstanceKey,
         status: "connecting",
       };
-      setInstances([...instances, newInstance]);
 
-      // Test the instance immediately
-      const testResult = await testWakapiInstance(newInstanceUrl, wakapiToken);
+      // Check if instance with same URL already exists
+      const existingInstanceIndex = instances.findIndex(
+        (instance) => instance.url === newInstanceUrl,
+      );
+
+      if (existingInstanceIndex !== -1) {
+        // Update existing instance
+        setInstances((prev) =>
+          prev.map((instance, index) =>
+            index === existingInstanceIndex
+              ? { ...instance, apiKey: newInstanceKey, status: "connecting" }
+              : instance,
+          ),
+        );
+      } else {
+        // Add new instance
+        setInstances((prev) => [...prev, newInstance]);
+      }
+
+      const testResult = await testWakapiInstance(
+        newInstanceUrl,
+        newInstanceKey,
+      );
 
       setInstances((prev) =>
         prev.map((instance) =>
-          instance.id === newInstance.id
+          instance.url === newInstanceUrl && instance.apiKey === newInstanceKey
             ? {
                 ...instance,
                 status: testResult.success ? "connected" : "error",
@@ -106,7 +156,7 @@ export default function Step5() {
       if (testResult.success) {
         toast.success("Wakapi instance connected successfully!");
         setNewInstanceUrl("");
-        setWakapiToken("");
+        setNewInstanceKey("");
       } else {
         toast.error(
           `Failed to connect to Wakapi instance: ${testResult.error}`,
@@ -125,19 +175,16 @@ export default function Step5() {
     const instance = instances.find((i) => i.id === instanceId);
     if (!instance) return;
 
-    // Set to connecting state
     setInstances((prev) =>
       prev.map((i) =>
         i.id === instanceId ? { ...i, status: "connecting" } : i,
       ),
     );
 
-    // We need to ask for the token again since we don't store it
     const token = prompt(
       `Please enter the token for ${instance.name} (${instance.url}):`,
     );
     if (!token) {
-      // Reset to error state if cancelled
       setInstances((prev) =>
         prev.map((i) => (i.id === instanceId ? { ...i, status: "error" } : i)),
       );
@@ -187,7 +234,12 @@ export default function Step5() {
       <div className="space-y-4">
         <h4 className="font-semibold">Connected Instances</h4>
 
-        {instances.length === 0 ? (
+        {isLoadingExisting ? (
+          <div className="rounded-lg border p-6 text-center text-gray-500">
+            <Server className="mx-auto mb-2 h-8 w-8 animate-pulse text-gray-400" />
+            <p className="text-sm">Loading existing instances...</p>
+          </div>
+        ) : instances.length === 0 ? (
           <div className="rounded-lg border p-6 text-center text-gray-500">
             <Server className="mx-auto mb-2 h-8 w-8 text-gray-400" />
             <p className="text-sm">No Wakapi instances connected yet.</p>
@@ -263,7 +315,8 @@ export default function Step5() {
               value={newInstanceUrl}
               onChange={(e) => setNewInstanceUrl(e.target.value)}
               placeholder="https://your-wakapi-instance.com"
-              className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+              disabled={isLoadingExisting}
             />
           </div>
 
@@ -277,21 +330,31 @@ export default function Step5() {
             <input
               id="wakapi-token"
               type="text"
-              value={wakapiToken}
-              onChange={(e) => setWakapiToken(e.target.value)}
+              value={newInstanceKey}
+              onChange={(e) => setNewInstanceKey(e.target.value)}
               placeholder="your-wakapi-token"
-              className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
               required
+              disabled={isLoadingExisting}
             />
           </div>
 
           <Button
             onClick={addInstance}
-            disabled={!newInstanceUrl || !wakapiToken || isTestingInstance}
+            disabled={
+              !newInstanceUrl ||
+              !newInstanceKey ||
+              isTestingInstance ||
+              isLoadingExisting
+            }
             className="w-full"
           >
             <Plus className="mr-2 h-4 w-4" />
-            {isTestingInstance ? "Testing Connection..." : "Add Instance"}
+            {isLoadingExisting
+              ? "Loading existing instances..."
+              : isTestingInstance
+                ? "Testing Connection..."
+                : "Add Instance"}
           </Button>
 
           {newInstanceUrl.includes("waka.hackclub.com") && (
@@ -310,7 +373,8 @@ export default function Step5() {
             <div className="space-y-2">
               <button
                 onClick={() => setNewInstanceUrl("https://wakapi.dev/api")}
-                className="block text-sm text-blue-600 hover:underline"
+                className="block text-sm text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:no-underline"
+                disabled={isLoadingExisting}
               >
                 https://wakapi.dev (Official public instance)
               </button>
@@ -320,7 +384,8 @@ export default function Step5() {
                     "https://hackatime.hackclub.com/api/hackatime/v1",
                   )
                 }
-                className="block text-sm text-blue-600 hover:underline"
+                className="block text-sm text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:no-underline"
+                disabled={isLoadingExisting}
               >
                 https://hackatime.hackclub.com (Hackatime v2 instance)
               </button>

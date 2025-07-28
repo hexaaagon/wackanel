@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getInstanceStatusAction } from "@/lib/app/actions/instance";
+import {
+  getInstanceStatusAction,
+  refreshInstanceStatuses,
+} from "@/lib/app/actions/instance";
 
 export interface InstanceStatus {
   onlineCount: number;
@@ -18,11 +21,20 @@ export function useInstanceStatus() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStatus = async () => {
+  const fetchStatus = async (shouldRefresh = false) => {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await getInstanceStatusAction();
+
+      let result;
+      if (shouldRefresh) {
+        // This will check instance health and update cache
+        result = await refreshInstanceStatuses();
+      } else {
+        // This will just get cached status
+        result = await getInstanceStatusAction();
+      }
+
       setStatus(result);
     } catch (err) {
       setError(
@@ -35,13 +47,24 @@ export function useInstanceStatus() {
   };
 
   useEffect(() => {
-    fetchStatus();
+    // Initial fetch with refresh to populate cache
+    fetchStatus(true);
+
+    // Set up periodic refresh every 2 minutes
+    const interval = setInterval(
+      () => {
+        fetchStatus(true);
+      },
+      2 * 60 * 1000,
+    );
+
+    return () => clearInterval(interval);
   }, []);
 
   return {
     status,
     isLoading,
     error,
-    refetch: fetchStatus,
+    refetch: (shouldRefresh = true) => fetchStatus(shouldRefresh),
   };
 }

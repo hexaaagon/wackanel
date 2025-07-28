@@ -16,12 +16,16 @@ export interface WakapiInstance {
 
 export class WakapiClient {
   async getInstancesForUser(userId: string): Promise<WakapiInstance[]> {
+    console.log("🔍 Fetching instances for user:", userId);
+
     const instances = await db
       .select()
       .from(wakatimeUserInstances)
       .where(eq(wakatimeUserInstances.userId, userId));
 
-    return instances.map((instance) => ({
+    console.log("📦 Raw instances from DB:", instances.length, instances);
+
+    const result = instances.map((instance) => ({
       id: instance.id,
       userId: instance.userId,
       type: instance.type,
@@ -30,11 +34,23 @@ export class WakapiClient {
       online: this.isInstanceOnline(instance.id),
       lastChecked: this.getLastChecked(instance.id),
     }));
+
+    console.log(
+      "✅ Processed instances:",
+      result.length,
+      result.map((i) => ({ id: i.id, online: i.online, apiUrl: i.apiUrl })),
+    );
+
+    return result;
   }
 
   private isInstanceOnline(instanceId: string): boolean {
     const cacheKey = generateCacheKey("instance_status", instanceId);
     const cached = wakatimeInstanceStatusCache.get(cacheKey);
+    console.log(`🔍 Checking cache for instance ${instanceId}:`, {
+      cacheKey,
+      cached,
+    });
     return cached?.online ?? false;
   }
 
@@ -49,19 +65,49 @@ export class WakapiClient {
     const cached = wakatimeInstanceStatusCache.get(cacheKey);
 
     if (cached && Date.now() - cached.lastChecked < 60000) {
+      console.log(
+        `🔍 Using cached health status for ${instance.id}:`,
+        cached.online,
+      );
       return cached.online;
     }
 
+    console.log(
+      `🔍 Performing health check for ${instance.id} at ${instance.apiUrl}`,
+    );
+
     try {
-      const response = await fetch(`${instance.apiUrl}/api/v1/users/current`, {
+      // Use the same endpoint as step-4 testing: /users/current/statusbar/today
+      // Remove trailing slash and add the statusbar endpoint
+      const cleanUrl = instance.apiUrl.replace(/\/$/, "");
+      const testUrl = `${cleanUrl}/users/current/statusbar/today`;
+
+      console.log(`🌐 Making request to: ${testUrl}`);
+      console.log(`🔑 Using API key: ${instance.apiKey.substring(0, 8)}...`);
+
+      const response = await fetch(testUrl, {
         method: "GET",
         headers: {
+          Authorization: `Bearer ${instance.apiKey}`,
           "Content-Type": "application/json",
         },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(10000), // Same timeout as step-4
       });
 
+      console.log(
+        `📡 Response status: ${response.status} ${response.statusText}`,
+      );
+
       const isOnline = response.ok;
+
+      if (!isOnline) {
+        const responseText = await response
+          .text()
+          .catch(() => "Could not read response");
+        console.log(`❌ Response body:`, responseText);
+      } else {
+        console.log(`✅ Health check successful for ${instance.id}`);
+      }
 
       wakatimeInstanceStatusCache.set(cacheKey, {
         online: isOnline,
@@ -71,7 +117,7 @@ export class WakapiClient {
       return isOnline;
     } catch (error) {
       console.error(
-        `Error checking instance health for ${instance.id}:`,
+        `❌ Error checking instance health for ${instance.id}:`,
         error,
       );
 

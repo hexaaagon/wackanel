@@ -87,22 +87,23 @@ export async function getSetupStatus() {
 
   // If no setup exists, create one
   if (!setup.data) {
-    setup = await supabaseService
+    const newSetup = await supabaseService
       .from("user_setup")
-      .upsert(
-        {
-          id: nanoid(8),
-          user_id: auth.user.id,
-          is_completed: false,
-          last_updated: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id",
-          ignoreDuplicates: true,
-        },
-      )
+      .insert({
+        id: nanoid(8),
+        user_id: auth.user.id,
+        is_completed: false,
+        last_updated: new Date().toISOString(),
+      })
       .select("is_completed, last_updated")
       .single();
+
+    if (newSetup.error) {
+      console.error("Error creating setup status:", newSetup.error);
+      return "error";
+    }
+
+    setup = newSetup;
   }
 
   if (setup.error) {
@@ -123,48 +124,73 @@ export async function completeSetup(state = true) {
     return "unauthenticated";
   }
 
-  // Use upsert to handle the case where setup doesn't exist yet
-  const setup = await supabaseService
-    .from("user_setup")
-    .upsert(
-      {
+  try {
+    // First try to update existing setup
+    const existingSetup = await supabaseService
+      .from("user_setup")
+      .update({
+        is_completed: state,
+        last_updated: new Date().toISOString(),
+      })
+      .eq("user_id", auth.user.id)
+      .select("is_completed, last_updated")
+      .single();
+
+    // If update succeeded, return the result
+    if (existingSetup.data) {
+      return {
+        isCompleted: existingSetup.data.is_completed,
+        lastUpdated: existingSetup.data.last_updated,
+      };
+    }
+
+    // If no existing record, create a new one
+    const newSetup = await supabaseService
+      .from("user_setup")
+      .insert({
         id: nanoid(8),
         user_id: auth.user.id,
         is_completed: state,
         last_updated: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id",
-      },
-    )
-    .select("is_completed, last_updated")
-    .single();
+      })
+      .select("is_completed, last_updated")
+      .single();
 
-  if (setup.error) {
-    console.error("Error completing setup:", setup);
+    if (newSetup.error) {
+      console.error("Error creating setup:", newSetup.error);
+      return "error";
+    }
+
+    return {
+      isCompleted: newSetup.data.is_completed,
+      lastUpdated: newSetup.data.last_updated,
+    };
+  } catch (error) {
+    console.error("Error in completeSetup:", error);
     return "error";
   }
-
-  return {
-    isCompleted: setup.data.is_completed,
-    lastUpdated: setup.data.last_updated,
-  };
 }
 
 export async function markSetupCompleteOnFirstHeartbeat(userId: string) {
   try {
-    // Use upsert to safely update or create the setup record
-    await supabaseService.from("user_setup").upsert(
-      {
+    // First try to update existing setup
+    const existingSetup = await supabaseService
+      .from("user_setup")
+      .update({
+        is_completed: true,
+        last_updated: new Date().toISOString(),
+      })
+      .eq("user_id", userId);
+
+    // If no rows were updated, create a new setup record
+    if (existingSetup.count === 0) {
+      await supabaseService.from("user_setup").insert({
         id: nanoid(8),
         user_id: userId,
         is_completed: true,
         last_updated: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id",
-      },
-    );
+      });
+    }
   } catch (error) {
     console.error("Error marking setup complete on first heartbeat:", error);
   }
