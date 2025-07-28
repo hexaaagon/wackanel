@@ -1,5 +1,5 @@
 {
-  "id": "666ed828-94c0-4db9-9a68-d3e1cd2173d8",
+  "id": "fadf4fd7-a447-4655-b016-9cb77c66ff72",
   "prevId": "976dad88-7942-4d3e-83a8-273a6964de1b",
   "version": "7",
   "dialect": "postgresql",
@@ -434,11 +434,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "unique_user_setup": {
-          "name": "unique_user_setup",
+        "user_setup_id_unique": {
+          "name": "user_setup_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "user_id"
+            "id"
           ]
         }
       },

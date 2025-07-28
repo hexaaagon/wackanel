@@ -6,7 +6,6 @@ import {
   timestamp,
   boolean,
   pgPolicy,
-  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -15,6 +14,7 @@ export const setupUser = pgTable(
   {
     id: text("id")
       .primaryKey()
+      .unique()
       .$defaultFn(() => nanoid(8)),
     userId: text("user_id")
       .notNull()
@@ -24,7 +24,6 @@ export const setupUser = pgTable(
     isCompleted: boolean("is_completed").default(false),
   },
   (table) => [
-    unique("unique_user_setup").on(table.userId),
     pgPolicy("Users can read/write their own profile", {
       as: "permissive",
       for: "all",
