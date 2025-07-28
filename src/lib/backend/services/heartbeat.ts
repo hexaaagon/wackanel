@@ -25,9 +25,6 @@ interface ProcessedHeartbeat {
 }
 
 export class HeartbeatService {
-  /**
-   * Process heartbeats - store in database and queue for external instances
-   */
   async processHeartbeats(
     userId: string,
     heartbeats: WakatimeHeartbeat[],
@@ -56,17 +53,34 @@ export class HeartbeatService {
         }
       }
 
-      // Queue heartbeats for external instances (WakaTime + custom instances)
+      // Try to send to external instances in real-time
+      // Only queue failed instances to pending
       const instances = await this.getUserInstances(userId);
 
-      for (const heartbeat of heartbeats) {
-        try {
-          await this.queuePendingHeartbeat(userId, heartbeat, instances);
-          queued++;
-        } catch (error) {
-          errors.push(
-            `Failed to queue heartbeat: ${error instanceof Error ? error.message : "Unknown error"}`,
-          );
+      if (instances.length > 0) {
+        for (const heartbeat of heartbeats) {
+          try {
+            const failedInstances =
+              await this.sendToInstancesWithFailureTracking(
+                userId,
+                [heartbeat],
+                instances,
+              );
+
+            // Only queue heartbeats for instances that failed
+            if (failedInstances.length > 0) {
+              await this.queuePendingHeartbeat(
+                userId,
+                heartbeat,
+                failedInstances,
+              );
+              queued++;
+            }
+          } catch (error) {
+            errors.push(
+              `Failed to process heartbeat for instances: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+          }
         }
       }
 
@@ -86,6 +100,75 @@ export class HeartbeatService {
         ],
       };
     }
+  }
+
+  /**
+   * Send heartbeats to instances and return list of failed instances
+   */
+  private async sendToInstancesWithFailureTracking(
+    userId: string,
+    heartbeats: WakatimeHeartbeat[],
+    instances: string[],
+  ): Promise<string[]> {
+    const failedInstances: string[] = [];
+
+    // Convert heartbeats to the format expected by external APIs
+    const formattedHeartbeats = heartbeats.map((hb) => ({
+      time: hb.time,
+      entity: hb.entity,
+      type: hb.type,
+      category: hb.category || "coding",
+      project: hb.project,
+      project_root_count: hb.project_root_count,
+      branch: hb.branch,
+      language: hb.language,
+      dependencies: hb.dependencies,
+      lines: hb.lines,
+      line_additions: hb.line_additions,
+      line_deletions: hb.line_deletions,
+      lineno: hb.lineno,
+      cursorpos: hb.cursorpos,
+      is_write: hb.is_write,
+    }));
+
+    // Try to send to WakaTime if it's in the instances list
+    if (instances.includes("wakatime")) {
+      try {
+        const success = await wakatimeApiClient.sendHeartbeat(
+          userId,
+          formattedHeartbeats,
+        );
+        if (!success) {
+          failedInstances.push("wakatime");
+        }
+      } catch (error) {
+        console.error("Failed to send to WakaTime:", error);
+        failedInstances.push("wakatime");
+      }
+    }
+
+    // Try to send to Wakapi instances
+    const wakapiInstanceIds = instances.filter((id) => id !== "wakatime");
+    if (wakapiInstanceIds.length > 0) {
+      try {
+        const results = await wakapiClient.sendHeartbeatToAllInstances(
+          userId,
+          formattedHeartbeats,
+        );
+
+        // Add failed Wakapi instances to the failed list
+        wakapiInstanceIds.forEach((instanceId) => {
+          if (!results.successful.includes(instanceId)) {
+            failedInstances.push(instanceId);
+          }
+        });
+      } catch (error) {
+        console.error("Failed to send to Wakapi instances:", error);
+        failedInstances.push(...wakapiInstanceIds);
+      }
+    }
+
+    return failedInstances;
   }
 
   /**

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateWakatimeApiAuth } from "@/lib/auth/wakatime-api-auth";
 import { heartbeatService } from "@/lib/backend/services/heartbeat";
-import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
-import { wakapiClient } from "@/lib/backend/client/wakapi";
 import { markSetupCompleteOnFirstHeartbeat } from "@/lib/app/actions/setup";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -124,39 +122,6 @@ export async function POST(request: NextRequest) {
             error,
           );
         }
-      }
-    }
-
-    // Forward heartbeats to WakaTime and Wakapi instances in real-time
-    try {
-      // Send to WakaTime
-      await wakatimeApiClient.sendHeartbeat(authResult.userId, heartbeats);
-      if (isDev) {
-        console.log("✅ [WakaTime API] Heartbeats forwarded to WakaTime");
-      }
-    } catch (error) {
-      if (isDev) {
-        console.log("⚠️ [WakaTime API] Failed to forward to WakaTime:", error);
-      }
-    }
-
-    try {
-      // Send to all Wakapi instances
-      await wakapiClient.sendHeartbeatToAllInstances(
-        authResult.userId,
-        heartbeats,
-      );
-      if (isDev) {
-        console.log(
-          "✅ [WakaTime API] Heartbeats forwarded to Wakapi instances",
-        );
-      }
-    } catch (error) {
-      if (isDev) {
-        console.log(
-          "⚠️ [WakaTime API] Failed to forward to Wakapi instances:",
-          error,
-        );
       }
     }
 

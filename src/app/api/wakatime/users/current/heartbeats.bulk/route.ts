@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateWakatimeApiAuth } from "@/lib/auth/wakatime-api-auth";
 import { heartbeatService } from "@/lib/backend/services/heartbeat";
-import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
-import { wakapiClient } from "@/lib/backend/client/wakapi";
 import { markSetupCompleteOnFirstHeartbeat } from "@/lib/app/actions/setup";
 import { bulkHeartbeatsRequestSchema } from "@/shared/schemas/wakatime";
 import { v4 as uuidv4 } from "uuid";
@@ -122,75 +120,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Convert heartbeats to WakaTime format for forwarding
-    const wakatimeHeartbeats = heartbeats.map((hb) => ({
-      time: hb.time,
-      entity: hb.entity,
-      type: hb.type,
-      category: hb.category || "coding",
-      project: hb.project,
-      project_root_count: hb.project_root_count,
-      branch: hb.branch,
-      language: hb.language,
-      dependencies: hb.dependencies,
-      lines: hb.lines,
-      line_additions: hb.line_additions,
-      line_deletions: hb.line_deletions,
-      lineno: hb.lineno,
-      cursorpos: hb.cursorpos,
-      is_write: hb.is_write,
-    }));
-
-    // Forward directly to WakaTime
-    let wakatimeSuccess = false;
-    try {
-      // Check if user has OAuth token first
-      const hasToken = await wakatimeApiClient.hasValidToken(authResult.userId);
-      if (isDev) {
-        console.log(
-          `🔑 [WakaTime Bulk API] OAuth token available: ${hasToken ? "YES" : "NO"}`,
-        );
-      }
-
-      wakatimeSuccess = await wakatimeApiClient.sendHeartbeat(
-        authResult.userId,
-        wakatimeHeartbeats,
-      );
-      if (isDev) {
-        console.log(
-          `🚀 [WakaTime Bulk API] WakaTime forward: ${wakatimeSuccess ? "SUCCESS" : "FAILED"}`,
-        );
-      }
-    } catch (error) {
-      if (isDev) {
-        console.log("❌ [WakaTime Bulk API] WakaTime forward error:", error);
-      }
-    }
-
-    // Forward directly to Wakapi instances
-    let wakapiResults: { successful: string[]; failed: string[] } = {
-      successful: [],
-      failed: [],
-    };
-    try {
-      wakapiResults = await wakapiClient.sendHeartbeatToAllInstances(
-        authResult.userId,
-        wakatimeHeartbeats,
-      );
-      if (isDev) {
-        console.log(
-          `🚀 [WakaTime Bulk API] Wakapi forward: ${wakapiResults.successful.length} success, ${wakapiResults.failed.length} failed`,
-        );
-      }
-    } catch (error) {
-      if (isDev) {
-        console.log("❌ [WakaTime Bulk API] Wakapi forward error:", error);
-      }
-    }
-
     if (isDev) {
       console.log(
-        `✅ [WakaTime Bulk API] Processed ${result.processed} heartbeats locally, forwarded to ${wakatimeSuccess ? 1 : 0} WakaTime + ${wakapiResults.successful.length} Wakapi instances`,
+        `✅ [WakaTime Bulk API] Processed ${result.processed} heartbeats locally, queued ${result.queued} for external instances`,
       );
     }
 
