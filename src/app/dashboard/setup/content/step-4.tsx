@@ -1,7 +1,8 @@
-import { Server, Plus, Trash2, CheckCircle } from "lucide-react";
+import { Server, Plus, Trash2, CheckCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, CodeBlock } from "@/components/app/setup";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface WakapiInstance {
   id: string;
@@ -14,9 +15,72 @@ export default function Step5() {
   const [instances, setInstances] = useState<WakapiInstance[]>([]);
   const [newInstanceUrl, setNewInstanceUrl] = useState("");
   const [wakapiToken, setWakapiToken] = useState("");
+  const [isTestingInstance, setIsTestingInstance] = useState(false);
 
-  const addInstance = () => {
-    if (newInstanceUrl) {
+  const testWakapiInstance = async (
+    url: string,
+    token: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Clean up URL - remove trailing slash and ensure proper format
+      const cleanUrl = url.replace(/\/$/, "");
+      const testUrl = `${cleanUrl}/users/current/statusbar/today`;
+
+      const response = await fetch(testUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return {
+            success: false,
+            error: "Invalid token or unauthorized access",
+          };
+        } else if (response.status === 404) {
+          return { success: false, error: "Invalid URL or endpoint not found" };
+        } else {
+          return {
+            success: false,
+            error: `HTTP ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
+
+      // Try to parse the response to ensure it's valid JSON
+      await response.json();
+      return { success: true };
+    } catch (error) {
+      console.error("Wakapi instance test failed:", error);
+
+      if (error instanceof Error) {
+        if (error.name === "TimeoutError") {
+          return {
+            success: false,
+            error: "Connection timeout - instance may be down",
+          };
+        } else if (error.message.includes("fetch")) {
+          return {
+            success: false,
+            error: "Network error - check URL and connectivity",
+          };
+        } else {
+          return { success: false, error: error.message };
+        }
+      }
+
+      return { success: false, error: "Unknown error occurred" };
+    }
+  };
+
+  const addInstance = async () => {
+    if (newInstanceUrl && wakapiToken) {
+      setIsTestingInstance(true);
+
       const newInstance: WakapiInstance = {
         id: Date.now().toString(),
         name: `Instance ${instances.length + 1}`,
@@ -24,24 +88,77 @@ export default function Step5() {
         status: "connecting",
       };
       setInstances([...instances, newInstance]);
-      setNewInstanceUrl("");
-      setWakapiToken("");
 
-      // Simulate connection
-      setTimeout(() => {
-        setInstances((prev) =>
-          prev.map((instance) =>
-            instance.id === newInstance.id
-              ? { ...instance, status: "connected" }
-              : instance,
-          ),
+      // Test the instance immediately
+      const testResult = await testWakapiInstance(newInstanceUrl, wakapiToken);
+
+      setInstances((prev) =>
+        prev.map((instance) =>
+          instance.id === newInstance.id
+            ? {
+                ...instance,
+                status: testResult.success ? "connected" : "error",
+              }
+            : instance,
+        ),
+      );
+
+      if (testResult.success) {
+        toast.success("Wakapi instance connected successfully!");
+        setNewInstanceUrl("");
+        setWakapiToken("");
+      } else {
+        toast.error(
+          `Failed to connect to Wakapi instance: ${testResult.error}`,
         );
-      }, 2000);
+      }
+
+      setIsTestingInstance(false);
     }
   };
 
   const removeInstance = (id: string) => {
     setInstances(instances.filter((instance) => instance.id !== id));
+  };
+
+  const retestInstance = async (instanceId: string) => {
+    const instance = instances.find((i) => i.id === instanceId);
+    if (!instance) return;
+
+    // Set to connecting state
+    setInstances((prev) =>
+      prev.map((i) =>
+        i.id === instanceId ? { ...i, status: "connecting" } : i,
+      ),
+    );
+
+    // We need to ask for the token again since we don't store it
+    const token = prompt(
+      `Please enter the token for ${instance.name} (${instance.url}):`,
+    );
+    if (!token) {
+      // Reset to error state if cancelled
+      setInstances((prev) =>
+        prev.map((i) => (i.id === instanceId ? { ...i, status: "error" } : i)),
+      );
+      return;
+    }
+
+    const testResult = await testWakapiInstance(instance.url, token);
+
+    setInstances((prev) =>
+      prev.map((i) =>
+        i.id === instanceId
+          ? { ...i, status: testResult.success ? "connected" : "error" }
+          : i,
+      ),
+    );
+
+    if (testResult.success) {
+      toast.success("Wakapi instance reconnected successfully!");
+    } else {
+      toast.error(`Failed to reconnect: ${testResult.error}`);
+    }
   };
 
   return (
@@ -95,16 +212,30 @@ export default function Step5() {
                   <div>
                     <p className="font-medium">{instance.name}</p>
                     <p className="text-sm text-gray-500">{instance.url}</p>
+                    {instance.status === "error" && (
+                      <p className="text-xs text-red-500">Connection failed</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {instance.status === "connected" && (
                     <CheckCircle className="h-5 w-5 text-green-500" />
                   )}
+                  {instance.status === "error" && (
+                    <Button
+                      variant="neutral"
+                      size="sm"
+                      onClick={() => retestInstance(instance.id)}
+                      title="Retry connection"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="neutral"
                     size="sm"
                     onClick={() => removeInstance(instance.id)}
+                    title="Remove instance"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -156,11 +287,11 @@ export default function Step5() {
 
           <Button
             onClick={addInstance}
-            disabled={!newInstanceUrl || !wakapiToken}
+            disabled={!newInstanceUrl || !wakapiToken || isTestingInstance}
             className="w-full"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Instance
+            {isTestingInstance ? "Testing Connection..." : "Add Instance"}
           </Button>
 
           {newInstanceUrl.includes("waka.hackclub.com") && (

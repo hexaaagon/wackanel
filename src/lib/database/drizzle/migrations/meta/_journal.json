@@ -43,6 +43,13 @@
       "when": 1752899897500,
       "tag": "0005_apikey_migrate",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1753703685667,
+      "tag": "0006_cleanup",
+      "breakpoints": true
     }
   ]
 }

@@ -78,27 +78,35 @@ export async function getSetupStatus() {
     return "unauthenticated";
   }
 
+  // First try to get existing setup
   let setup = await supabaseService
     .from("user_setup")
     .select("is_completed, last_updated")
     .eq("user_id", auth.user.id)
     .single();
 
+  // If no setup exists, create one
   if (!setup.data) {
     setup = await supabaseService
       .from("user_setup")
-      .insert({
-        id: nanoid(8),
-        user_id: auth.user.id,
-        is_completed: false,
-        last_updated: new Date().toISOString(),
-      })
+      .upsert(
+        {
+          id: nanoid(8),
+          user_id: auth.user.id,
+          is_completed: false,
+          last_updated: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id",
+          ignoreDuplicates: true,
+        },
+      )
       .select("is_completed, last_updated")
       .single();
   }
 
   if (setup.error) {
-    console.error("Error completing setup:", setup);
+    console.error("Error getting setup status:", setup);
     return "error";
   }
 
@@ -115,24 +123,22 @@ export async function completeSetup(state = true) {
     return "unauthenticated";
   }
 
-  let setup = await supabaseService
+  // Use upsert to handle the case where setup doesn't exist yet
+  const setup = await supabaseService
     .from("user_setup")
-    .select("id, is_completed, last_updated")
-    .eq("user_id", auth.user.id)
-    .single();
-
-  if (!setup.data || setup.data.is_completed !== state) {
-    setup = await supabaseService
-      .from("user_setup")
-      .upsert({
-        id: setup.data?.id || nanoid(8),
+    .upsert(
+      {
+        id: nanoid(8),
         user_id: auth.user.id,
         is_completed: state,
         last_updated: new Date().toISOString(),
-      })
-      .select("is_completed, last_updated")
-      .single();
-  }
+      },
+      {
+        onConflict: "user_id",
+      },
+    )
+    .select("is_completed, last_updated")
+    .single();
 
   if (setup.error) {
     console.error("Error completing setup:", setup);
@@ -147,25 +153,18 @@ export async function completeSetup(state = true) {
 
 export async function markSetupCompleteOnFirstHeartbeat(userId: string) {
   try {
-    // Check if setup is already completed
-    const existingSetup = await supabaseService
-      .from("user_setup")
-      .select("is_completed")
-      .eq("user_id", userId)
-      .single();
-
-    // If setup doesn't exist or is not completed, mark it as complete
-    if (!existingSetup.data || !existingSetup.data.is_completed) {
-      await supabaseService
-        .from("user_setup")
-        .upsert({
-          id: nanoid(8),
-          user_id: userId,
-          is_completed: true,
-          last_updated: new Date().toISOString(),
-        })
-        .eq("user_id", userId);
-    }
+    // Use upsert to safely update or create the setup record
+    await supabaseService.from("user_setup").upsert(
+      {
+        id: nanoid(8),
+        user_id: userId,
+        is_completed: true,
+        last_updated: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      },
+    );
   } catch (error) {
     console.error("Error marking setup complete on first heartbeat:", error);
   }

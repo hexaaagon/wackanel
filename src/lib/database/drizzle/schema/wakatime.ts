@@ -85,48 +85,6 @@ export const wakatimeProfiles = pgTable(
   ],
 );
 
-export const wakatimeUserStats = pgTable(
-  "user_wakatime_stats",
-  {
-    id: text("id")
-      .primaryKey()
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-
-    // Activity time fields
-    totalSeconds: integer("total_seconds").notNull(),
-    totalSecondsIncludingOther: integer(
-      "total_seconds_including_other_language",
-    ).notNull(),
-    humanReadableTotal: text("human_readable_total").notNull(),
-    humanReadableTotalIncludingOther: text(
-      "human_readable_total_including_other_language",
-    ).notNull(),
-
-    // Best hour (instead of best day)
-    bestHour: integer("best_hour"), // 0-23
-    bestHourTotalSeconds: integer("best_hour_total_seconds"),
-    bestHourText: text("best_hour_text"),
-
-    // JSON fields for aggregated data (easier to query and update)
-    categories: text("categories"), // JSON array of {name, total_seconds, percent, text}
-    projects: text("projects"), // JSON array of {name, total_seconds, percent, text}
-    languages: text("languages"), // JSON array of {name, total_seconds, percent, text}
-    editors: text("editors"), // JSON array of {name, total_seconds, percent, text}
-
-    // Timestamps
-    createdAt: timestamp("created_at").$defaultFn(() => new Date()),
-  },
-  (table) => [
-    pgPolicy("Users can read their own stats", {
-      as: "permissive",
-      for: "select",
-      to: "authenticated",
-      using: sql`id = current_user_id()`,
-    }),
-  ],
-);
-
 export const wakatimeUserInstances = pgTable(
   "user_wakatime_instances",
   {
