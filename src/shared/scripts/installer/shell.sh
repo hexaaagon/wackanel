@@ -39,7 +39,7 @@ echo "API Key: ${API_KEY:0:8}..." # Show only first 8 chars for security
 # Send test heartbeat using values from config
 echo "Sending test heartbeat..."
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/users/current/heartbeats" \
-  -H "Authorization: Bearer $API_KEY" \
+  -H "Authorization: Basic $(echo -n $API_KEY | base64)" \
   -H "Content-Type: application/json" \
   -d "[{\"type\":\"file\",\"time\":$(date +%s),\"entity\":\"test.txt\",\"category\":\"coding\",\"language\":\"Text\"}]")
 

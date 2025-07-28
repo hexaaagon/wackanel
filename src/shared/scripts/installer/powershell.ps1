@@ -70,9 +70,10 @@ api_key = $apiKey
             }
             
             try {
+                $encodedKey = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($apiKey))
                 $response = Invoke-RestMethod -Uri "$apiUrl/users/current/heartbeats" `
                     -Method Post `
-                    -Headers @{Authorization="Bearer $apiKey"} `
+                    -Headers @{Authorization="Basic $encodedKey"} `
                     -ContentType 'application/json' `
                     -Body "[$($heartbeat | ConvertTo-Json)]"
                     
