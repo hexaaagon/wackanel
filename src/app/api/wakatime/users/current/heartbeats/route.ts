@@ -4,6 +4,7 @@ import { heartbeatService } from "@/lib/backend/services/heartbeat";
 import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { wakapiClient } from "@/lib/backend/client/wakapi";
 import { markSetupCompleteOnFirstHeartbeat } from "@/lib/app/actions/setup";
+import { v4 as uuidv4 } from "uuid";
 import {
   heartbeatsRequestSchema,
   type WakatimeHeartbeat,
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
     // Return WakaTime-compatible response
     const response = heartbeats.map((heartbeat) => ({
       data: {
-        id: `hb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: uuidv4(),
         entity: heartbeat.entity,
         type: heartbeat.type,
         time: heartbeat.time,

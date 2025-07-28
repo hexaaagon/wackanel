@@ -5,6 +5,7 @@ import { wakatimeApiClient } from "@/lib/backend/client/wakatime";
 import { wakapiClient } from "@/lib/backend/client/wakapi";
 import { markSetupCompleteOnFirstHeartbeat } from "@/lib/app/actions/setup";
 import { bulkHeartbeatsRequestSchema } from "@/shared/schemas/wakatime";
+import { v4 as uuidv4 } from "uuid";
 import {
   createValidationErrorResponse,
   createAuthErrorResponse,
@@ -193,15 +194,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return WakaTime-compatible bulk response (flat array format)
-    const response = heartbeats.map((heartbeat) => ({
-      data: {
-        id: `hb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        entity: heartbeat.entity,
-        type: heartbeat.type,
-        time: heartbeat.time,
-      },
-    }));
+    // Return WakaTime-compatible bulk response (responses array with [response, status] pairs)
+    const response = {
+      responses: heartbeats.map((heartbeat) => [
+        {
+          data: {
+            id: uuidv4(),
+            entity: heartbeat.entity,
+            type: heartbeat.type,
+            time: heartbeat.time,
+          },
+        },
+        201,
+      ]),
+    };
 
     if (isDev) {
       console.log(
