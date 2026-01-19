@@ -48,7 +48,7 @@
     "lru-cache": "^11.1.0",
     "lucide-react": "^0.516.0",
     "nanoid": "^5.1.5",
-    "next": "^15.4.4",
+    "next": "15.4.8",
     "postgres": "^3.4.7",
     "prettier-plugin-tailwindcss": "^0.6.12",
     "react": "^19.0.0",
