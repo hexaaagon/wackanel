@@ -1,7 +1,8 @@
 "use client";
+
+import { SiWakatime } from "@icons-pack/react-simple-icons";
 import Image from "next/image";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import { SiWakatime } from "@icons-pack/react-simple-icons";
 import { authClient } from "@/lib/auth/client";
 
 export default function AuthPage() {
@@ -42,9 +41,11 @@ export default function AuthPage() {
       </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-xl">Sign in to your account</CardTitle>
+          <CardTitle className="text-xl line-through">
+            Sign in to your account
+          </CardTitle>
           <CardDescription>
-            To continue, please sign in with your Wakatime account.
+            Wackanel is now on <u>under maintenance</u>.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -52,6 +53,7 @@ export default function AuthPage() {
             variant="neutral"
             className="w-full cursor-pointer"
             onClick={handleSignIn}
+            disabled
           >
             <SiWakatime /> Continue with Wakatime
           </Button>

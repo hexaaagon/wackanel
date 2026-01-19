@@ -4,11 +4,11 @@ import { StoreProviderWrapper } from "@/lib/app/store/provider";
 import "./globals.css";
 import type { Metadata } from "next";
 import {
-  DM_Sans,
-  DM_Mono,
-  Bricolage_Grotesque,
-  Public_Sans,
   Archivo,
+  Bricolage_Grotesque,
+  DM_Mono,
+  DM_Sans,
+  Public_Sans,
 } from "next/font/google";
 import ThemeProvider from "@/components/app/theme-provider";
 
